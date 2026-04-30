@@ -81,7 +81,10 @@ function callback_websocket_message(ev) {
         return;
     }
 
+    var chat_was_focused = document.activeElement === document.getElementById('chat-input');
     GlkOte.update(obj);
+    if (chat_was_focused)
+        document.getElementById('chat-input').focus();
 }
 
 function update_player_list(players) {
