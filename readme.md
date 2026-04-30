@@ -3,6 +3,8 @@
 Flutterbug is a project that let's you play parser-style Interactive Fiction
 games collaboratively with one or more friends online.
 
+![Flutterbug screenshot](screenshot.png)
+
 It can play:
 
 - ZMachine games (such as Infocom games)
