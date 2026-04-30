@@ -81,6 +81,7 @@ body {
 
 #players-list span {
   color: var(--player-color, var(--fb-player-fallback-color));
+  padding-bottom: 6px;
 }
 
 #players-list span.me::before {
