@@ -83,9 +83,12 @@ function update_player_list(players) {
     list.empty();
     for (var ix = 0; ix < players.length; ix++) {
         var player = players[ix];
-        var item = $('<li></li>');
-        item.text(player.name || ('Player ' + player.id));
+        var name = player.name || ('Player ' + player.id);
+        var item = $('<span></span>');
+        item.text(name);
         item[0].style.setProperty('--player-color', player.color || '#555');
+        if (name === multiplayer_playername)
+            item.addClass('me');
         list.append(item);
     }
 }

@@ -61,11 +61,6 @@ body {
   font-size: var(--fb-h3-size);
 }
 
-#room-label {
-  margin: var(--fb-room-label-margin-top) var(--fb-room-label-margin-x) 0px var(--fb-room-label-margin-x);
-  font-size: var(--fb-room-label-size);
-  color: var(--fb-room-label-color);
-}
 
 #shared-status {
   margin: var(--fb-status-margin-top) var(--fb-status-margin-x) var(--fb-status-margin-bottom) var(--fb-status-margin-x);
@@ -78,13 +73,18 @@ body {
 
 #players-list {
   margin: 0px var(--fb-players-margin-x);
-  padding-left: var(--fb-players-padding-left);
-  max-height: var(--fb-players-max-height);
-  overflow-y: auto;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.5em;
 }
 
-#players-list li {
+#players-list span {
   color: var(--player-color, var(--fb-player-fallback-color));
+}
+
+#players-list span.me {
+  text-decoration: underline;
 }
 
 #command-feed {
@@ -208,9 +208,6 @@ body {
     border-top: 1px solid var(--fb-sidebar-border);
   }
 
-  #players-list {
-    max-height: var(--fb-mobile-players-max-height);
-  }
 
   #command-feed,
   #chat-messages {
