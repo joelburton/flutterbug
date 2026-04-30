@@ -98,6 +98,26 @@ Quitting Flutterbug will disconnect that tunnel.
 The `--help` command will show other options, including selecting a different
 port than 4000, and emitting more debugging-style log messages.
 
+### Display mode: `--mode=flex` (default) or `--mode=fixed`
+
+Most games work best in the default **flex** mode. Each player can use
+whatever browser window size they prefer and pick their own font size,
+and the game text reflows to fit. Use this for almost everything —
+classic Infocom-style games, most modern parser IF, anything where the
+game is just "status bar on top, story text below".
+
+Switch to **fixed** mode for games with carefully designed window
+layouts — multiple text panes side-by-side, fixed-width art or maps,
+puzzle games where the geometry of the screen matters. In fixed mode,
+the first player to connect (the "host") sets the window size for
+everyone, so the layout looks identical on every screen. Players whose
+browser is smaller than the host's will see the edges clipped; players
+with bigger windows will see empty space around the game.
+
+```sh
+flutterbug --mode=fixed --password "super secret" --open --story=FancyGame.gblorb
+```
+
 ### Other tunneling options
 
 You can use Cloudflare tunneling rather than Localhost.run. To do so, you'll
