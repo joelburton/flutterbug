@@ -237,6 +237,7 @@ class SharedRoom(PersistSession):
         self.clients: dict[int, dict] = {}
         self.next_clientid = 1
         self.next_color_index = 0
+        self.player_roster: list[dict] = []
         self.snapshot = SnapshotState()
         self.input_queue: asyncio.Queue = asyncio.Queue()
         self.queue_task: asyncio.Task | None = None
@@ -253,6 +254,8 @@ class SharedRoom(PersistSession):
         self.snapshot.reset()
         self.specialinput_clientid = None
         self.status_message = ''
+        self.player_roster.clear()
+        self.next_color_index = 0
 
     # -----------------------------------------------------------------
     # Logging / image-URL synthesis
@@ -329,8 +332,14 @@ class SharedRoom(PersistSession):
             self.close_task = None
         clientid = self.next_clientid
         self.next_clientid += 1
-        color = PLAYER_COLORS[self.next_color_index % len(PLAYER_COLORS)]
-        self.next_color_index += 1
+        roster_entry = next((e for e in self.player_roster if e['name'] == playername), None)
+        if roster_entry:
+            color = roster_entry['color']
+            roster_entry['connected'] = True
+        else:
+            color = PLAYER_COLORS[self.next_color_index % len(PLAYER_COLORS)]
+            self.next_color_index += 1
+            self.player_roster.append({'name': playername, 'color': color, 'connected': True})
         self.clients[clientid] = {
             'sock': sock,
             'playername': playername,
@@ -340,8 +349,12 @@ class SharedRoom(PersistSession):
         return clientid
 
     def remove_client(self, clientid: int) -> None:
-        if clientid in self.clients:
-            del self.clients[clientid]
+        conn = self.clients.pop(clientid, None)
+        if conn:
+            for entry in self.player_roster:
+                if entry['name'] == conn['playername']:
+                    entry['connected'] = False
+                    break
 
         # If the leaving client was holding a fileref-prompt lock, release it
         # so the remaining players aren't stuck. If anyone else is still here,
@@ -366,12 +379,9 @@ class SharedRoom(PersistSession):
 
     def list_players(self) -> list[dict]:
         return [
-            {
-                'id': clientid,
-                'name': conn['playername'],
-                'color': conn['color'],
-            }
-            for (clientid, conn) in sorted(self.clients.items())
+            {'name': entry['name'], 'color': entry['color']}
+            for entry in self.player_roster
+            if entry['connected']
         ]
 
     # -----------------------------------------------------------------
