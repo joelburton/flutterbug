@@ -81,7 +81,10 @@ body {
 
 #players-list span {
   color: var(--player-color, var(--fb-player-fallback-color));
-  padding-bottom: 6px;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
 }
 
 #players-list span.me::before {
@@ -90,18 +93,14 @@ body {
 
 #players-list span.typing-chat {
   font-weight: bold;
-  text-decoration: underline;
+  text-decoration-color: currentColor;
   text-decoration-style: dashed;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 4px;
 }
 
 #players-list span.typing-command {
   font-weight: bold;
-  text-decoration: underline;
+  text-decoration-color: currentColor;
   text-decoration-style: solid;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 4px;
 }
 
 #command-feed {
