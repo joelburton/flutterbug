@@ -235,7 +235,7 @@ class SharedRoom(PersistSession):
         resource_url_prefix: str = '/static/resource',
         vm_factory: Optional[Callable[[str, str], Awaitable[VMProcess]]] = None,
         mode: str = MODE_FLEX,
-        status_cols: int = 60,
+        status_cols: int = 72,
     ) -> None:
         super().__init__(command, log, cwd, vm_factory=vm_factory)
         if mode not in (MODE_FLEX, MODE_FIXED):

@@ -95,7 +95,7 @@ def create_app(settings) -> FastAPI:
             resource_url_prefix=resource_url_prefix,
             vm_factory=getattr(settings, 'vm_factory', None),
             mode=getattr(settings, 'mode', 'flex'),
-            status_cols=getattr(settings, 'status_cols', 60),
+            status_cols=getattr(settings, 'status_cols', 72),
         )
         autounpack_blorb_resources(settings.story_path, resource_dir, log)
         try:

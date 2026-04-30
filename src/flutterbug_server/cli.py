@@ -246,10 +246,12 @@ def main():
              'width and the VM is locked to a fixed status-bar column count. '
              'fixed: VM follows whoever last resized; classic shared behavior.')
     parser.add_argument(
-        '--status-cols', type=int, default=60, metavar='N',
+        '--status-cols', type=int, default=72, metavar='N',
         help='in flex mode, the column width the VM uses for grid (status) '
-             'windows (default 60). Wider hosts will see blank space to the '
-             'right of the status bar; narrower viewers may clip.')
+             'windows (default 72, sized for iPad-class portrait viewports '
+             'with the bundled Iosevka Custom mono). Wider hosts will see '
+             'blank space to the right of the status bar; narrower viewers '
+             'may clip.')
     parser.add_argument(
         '--gidebug', action='store_true',
         help='activate the GlkOte debug console')
