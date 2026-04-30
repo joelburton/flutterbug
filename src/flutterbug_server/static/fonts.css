@@ -1,0 +1,84 @@
+/*
+ * Self-hosted webfonts for Flutterbug.
+ *
+ * Iosevka Custom: condensed monospace (built locally with noLigation +
+ *   noCvSs + sans serifs), used for the game's grid windows so we can
+ *   fit ~17% more columns than typical mono fonts at the same pixel
+ *   width.
+ * Source Serif 4: serif used for the buffer (game prose) and the
+ *   sidebar.
+ *
+ * Both are subsetted with pyftsubset to ASCII + Latin-1 + Latin
+ * Extended-A + General Punctuation + Currency + Box Drawing + Block
+ * Elements + Geometric Shapes — covers everything IF games use without
+ * carrying braille / Armenian / Fraktur / math symbols / etc.
+ *
+ * font-display: swap so GlkOte can render with the system fallback
+ * stack while the woff2 loads, then re-flow once the real font is in.
+ * The grid-cell width in metrics is computed from the loaded font, so
+ * a fast swap is preferable to a long block.
+ */
+
+@font-face {
+  font-family: 'Iosevka Custom';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/static/fonts/iosevka-custom-400-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Iosevka Custom';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/static/fonts/iosevka-custom-400-italic.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Iosevka Custom';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/static/fonts/iosevka-custom-700-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Iosevka Custom';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/static/fonts/iosevka-custom-700-italic.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Source Serif 4';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/static/fonts/source-serif-400-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Source Serif 4';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/static/fonts/source-serif-400-italic.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Source Serif 4';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/static/fonts/source-serif-700-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Source Serif 4';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/static/fonts/source-serif-700-italic.woff2') format('woff2');
+}

@@ -11,7 +11,8 @@
  */
 
 :root {
-  --fb-font-serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  --fb-font-serif: "Source Serif 4", "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  --fb-font-mono: "Iosevka Custom", "SFMono-Regular", Menlo, Consolas, monospace;
   --fb-color-gameport-bg: #10151c;
 
   /* Multiplier the in-app A−/A+ stepper writes onto documentElement.
@@ -20,14 +21,14 @@
 
   --glk-window-bg: #18212c;
   --glk-buffer-text-color: #d9e3ee;
-  --glk-buffer-font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  --glk-buffer-font-family: "Source Serif 4", "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, serif;
   --glk-buffer-font-size: calc(1.1875rem * var(--glk-game-font-scale));
   --glk-buffer-line-height: 1.52;
   --glk-buffer-padding: 0.625rem 0.875rem 0.625rem 0.875rem;
 
   --glk-grid-bg: #111922;
   --glk-grid-text-color: #c2d2e2;
-  --glk-grid-font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+  --glk-grid-font-family: "Iosevka Custom", "SFMono-Regular", Menlo, Consolas, monospace;
   --glk-grid-font-size: calc(0.875rem * var(--glk-game-font-scale));
   --glk-grid-padding: 0.5rem 0.75rem 0.5rem 0.75rem;
 
