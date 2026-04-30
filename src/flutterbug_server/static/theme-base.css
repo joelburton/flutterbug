@@ -81,6 +81,7 @@ body {
 
 #players-list span {
   color: var(--player-color, var(--fb-player-fallback-color));
+  line-height: 1;
   text-decoration: underline;
   text-decoration-color: transparent;
   text-decoration-thickness: 2px;
