@@ -17,6 +17,7 @@ from .protocol import (
     EVT_CHAT,
     EVT_LINE,
     EVT_SPECIALRESPONSE,
+    EVT_TYPING,
     LAYOUT_EVENTS,
     MP_CHAT,
     MP_COMMAND,
@@ -25,6 +26,7 @@ from .protocol import (
     MP_KEY,
     MP_PLAYERS,
     MP_STATUS,
+    MP_TYPING,
     SNAPSHOT_REPLAY_EVENTS,
     SPECIAL_FILEREF_PROMPT,
 )
@@ -461,6 +463,10 @@ class SharedRoom(PersistSession):
             await self._handle_chat(clientid, obj)
             return
 
+        if evtype == EVT_TYPING:
+            await self._handle_typing(clientid, obj)
+            return
+
         if not await self._allow_through_fileref_lock(clientid, evtype):
             return
 
@@ -492,6 +498,20 @@ class SharedRoom(PersistSession):
             'color': conn['color'] if conn else '#888',
             'text': text,
         })
+
+    async def _handle_typing(self, clientid: int, obj: JsonDict) -> None:
+        mode = obj.get('mode')
+        if mode not in ('chat', 'command', None):
+            return
+        conn = self.clients.get(clientid)
+        payload = {
+            MP_KEY: MP_TYPING,
+            'player': conn['playername'] if conn else 'Player',
+            'mode': mode,
+        }
+        for cid in list(self.clients):
+            if cid != clientid:
+                await self.send_to_client(cid, payload)
 
     async def _allow_through_fileref_lock(self, clientid: int, evtype: Any) -> bool:
         """Gate input while a fileref prompt is held by some client.

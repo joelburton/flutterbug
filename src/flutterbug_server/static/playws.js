@@ -8,6 +8,9 @@ var websocket = null;
 var slash_chat_enabled = true;
 var SLASH_CHAT_KEY = 'flutterbug.slashChat';
 
+var TYPING_STOP_DELAY = 3000;
+var typing_timers = { chat: null, command: null };
+
 var FONT_SCALE_KEY = 'flutterbug.gameFontScale';
 var FONT_SCALE_MIN = 0.7;
 var FONT_SCALE_MAX = 2.0;
@@ -66,6 +69,11 @@ function callback_websocket_message(ev) {
         return;
     }
 
+    if (obj.multiplayer == 'typing') {
+        update_typing(obj.player, obj.mode || null);
+        return;
+    }
+
     if (obj.multiplayer == 'error' || obj.multiplayer == 'info') {
         append_system_message(obj.message || 'Server message.');
         if (obj.multiplayer == 'error')
@@ -91,6 +99,29 @@ function update_player_list(players) {
             item.addClass('me');
         list.append(item);
     }
+}
+
+function update_typing(player, mode) {
+    $('#players-list span').each(function() {
+        if ($(this).text() === player) {
+            $(this).removeClass('typing-chat typing-command');
+            if (mode)
+                $(this).addClass('typing-' + mode);
+        }
+    });
+}
+
+function send_typing(mode) {
+    if (!websocket)
+        return;
+    if (typing_timers[mode])
+        clearTimeout(typing_timers[mode]);
+    websocket.send(JSON.stringify({ type: 'typing', mode: mode }));
+    typing_timers[mode] = setTimeout(function() {
+        typing_timers[mode] = null;
+        if (websocket)
+            websocket.send(JSON.stringify({ type: 'typing', mode: null }));
+    }, TYPING_STOP_DELAY);
 }
 
 function append_command(player, command) {
@@ -235,6 +266,8 @@ $(document).ready(function() {
             send_chat();
         } else if (ev.key === 'Escape') {
             focus_game_input();
+        } else {
+            send_typing('chat');
         }
     });
 
@@ -245,6 +278,8 @@ $(document).ready(function() {
         if (slash_chat_enabled && ev.key === '/' && $(this).val() === '') {
             ev.preventDefault();
             $('#chat-input').focus();
+        } else if (ev.key !== 'Enter') {
+            send_typing('command');
         }
     });
 });

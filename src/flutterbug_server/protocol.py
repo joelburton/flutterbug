@@ -15,6 +15,7 @@ EVT_ARRANGE: Final = 'arrange'
 EVT_LINE: Final = 'line'
 EVT_SPECIALRESPONSE: Final = 'specialresponse'
 EVT_CHAT: Final = 'chat'
+EVT_TYPING: Final = 'typing'
 
 # Non-input layout-related events. Used by the fileref-prompt lock so
 # that a player who isn't holding the save/restore prompt can still
@@ -39,5 +40,6 @@ MP_CHAT: Final = 'chat'
 MP_PLAYERS: Final = 'players'
 MP_STATUS: Final = 'status'
 MP_COMMAND: Final = 'command'
+MP_TYPING: Final = 'typing'
 MP_INFO: Final = 'info'
 MP_ERROR: Final = 'error'

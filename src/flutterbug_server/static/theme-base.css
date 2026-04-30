@@ -85,6 +85,16 @@ body {
 
 #players-list span.me {
   text-decoration: underline;
+  text-decoration-style: solid;
+}
+
+#players-list span.typing-chat {
+  text-decoration: underline;
+  text-decoration-style: dashed;
+}
+
+#players-list span.typing-command {
+  font-weight: bold;
 }
 
 #command-feed {
