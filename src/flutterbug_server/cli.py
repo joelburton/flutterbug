@@ -18,6 +18,8 @@ from urllib.parse import urlparse
 import dns.exception
 import dns.resolver
 
+from . import __version__ as FLUTTERBUG_VERSION
+
 
 def _open_when_ready(url: str, timeout_sec: float = 15.0):
     """Wait for the server to respond, then open a browser tab once."""
@@ -225,8 +227,13 @@ def _stop_tunnel(proc: subprocess.Popen, name: str, log: logging.Logger):
 def main():
     log = logging.getLogger('uvicorn.error')
     parser = argparse.ArgumentParser(
-        description='Flutterbug: collaborative parser IF web server.',
+        description=(
+            f'Flutterbug {FLUTTERBUG_VERSION}: '
+            f'collaborative parser IF web server.'),
     )
+    parser.add_argument(
+        '--version', action='version',
+        version=f'%(prog)s {FLUTTERBUG_VERSION}')
     parser.add_argument(
         '--port', type=int, default=4000,
         help='port number to listen on (default: 4000)')
@@ -242,16 +249,13 @@ def main():
              'With --command, used for IFDB metadata + Blorb resource extraction.')
     parser.add_argument(
         '--mode', choices=('flex', 'fixed'), default='flex',
-        help='flex (default): each player wraps the buffer at their own viewport '
-             'width and the VM is locked to a fixed status-bar column count. '
-             'fixed: VM follows whoever last resized; classic shared behavior.')
+        help='flex (default): players can have different browser width/height '
+             'than others, and can change font sizes. '
+             'fixed: all players use same browser width/height; use for games '
+             'with nonstandard windows.')
     parser.add_argument(
         '--status-cols', type=int, default=72, metavar='N',
-        help='in flex mode, the column width the VM uses for grid (status) '
-             'windows (default 72, sized for iPad-class portrait viewports '
-             'with the bundled Iosevka Custom mono). Wider hosts will see '
-             'blank space to the right of the status bar; narrower viewers '
-             'may clip.')
+        help='72 (default) in flex mode, sets the status window width in columns.')
     parser.add_argument(
         '--gidebug', action='store_true',
         help='activate the GlkOte debug console')
@@ -264,13 +268,11 @@ def main():
     tunnel_group = parser.add_mutually_exclusive_group()
     tunnel_group.add_argument(
         '--tunnel', action='store_true',
-        help='expose the server publicly via a localhost.run ssh tunnel '
-             '(no account needed, only requires ssh). With --open, opens '
-             'the public URL once DNS is live.')
+        help='expose the server publicly via a localhost.run ssh tunnel.')
+
     tunnel_group.add_argument(
         '--cloudflare', action='store_true',
-        help='expose via a cloudflared quick tunnel instead of localhost.run. '
-             'Requires the cloudflared binary on PATH.')
+        help='expose via cloudflared tunnel instead of localhost.run.')
     parser.add_argument(
         '--secret', default=None,
         help='secret key for session signing (random per-run if omitted)')
@@ -281,8 +283,7 @@ def main():
     auth_group.add_argument(
         '--no-password', action='store_true',
         help='allow anyone who reaches the URL to sign in. Only safe on a '
-             'trusted local network — never combine with --tunnel/--cloudflare '
-             'or any other public exposure.')
+             'trusted local network.')
     args = parser.parse_args()
 
     if not args.command and not args.story:

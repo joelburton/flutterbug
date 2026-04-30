@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "flutterbug"
-version = "0.92"
+dynamic = ["version"]
 description = "Collaborative parser IF web server based on FastAPI/RemGlk"
 readme = "readme.md"
 requires-python = ">=3.10"
@@ -33,6 +33,9 @@ flutterbug = "flutterbug_server.cli:main"
 [tool.setuptools]
 package-dir = {"" = "src"}
 include-package-data = true
+
+[tool.setuptools.dynamic]
+version = {attr = "flutterbug_server.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
