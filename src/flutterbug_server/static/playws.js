@@ -74,6 +74,11 @@ function callback_websocket_message(ev) {
         return;
     }
 
+    if (obj.multiplayer == 'layout') {
+        apply_gameport_layout(obj.width, obj.height);
+        return;
+    }
+
     if (obj.multiplayer == 'error' || obj.multiplayer == 'info') {
         append_system_message(obj.message || 'Server message.');
         if (obj.multiplayer == 'error')
@@ -211,6 +216,28 @@ function current_font_scale() {
     var raw = getComputedStyle(document.documentElement).getPropertyValue('--glk-game-font-scale');
     var val = parseFloat(raw);
     return isNaN(val) ? 1 : val;
+}
+
+/* Fixed-mode only: server pushes the host's gameport pixel size so this
+   client's #gameport matches and GlkOte's right-anchored window rects
+   (left + width vs current_metrics.width) render pixel-identical to the
+   host. Setting inline width/height also overrides the absolute
+   left:0/right:sidebar/height:100% in theme-base.css. After resizing we
+   dispatch a window resize so GlkOte re-measures current_metrics — its
+   internal cache is set at init time, before the layout message arrives. */
+function apply_gameport_layout(width, height) {
+    var gp = document.getElementById('gameport');
+    if (!gp) return;
+    if (typeof width === 'number') {
+        gp.style.width = width + 'px';
+        /* CSS spec: when left/right/width are all set the right value is
+           ignored, but explicit "auto" is clearer to anyone reading
+           devtools. */
+        gp.style.right = 'auto';
+    }
+    if (typeof height === 'number')
+        gp.style.height = height + 'px';
+    window.dispatchEvent(new Event('resize'));
 }
 
 function update_status(message) {

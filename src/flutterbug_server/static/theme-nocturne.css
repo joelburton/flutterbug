@@ -107,10 +107,6 @@
   --fb-mobile-feed-height: 3.375rem;
 }
 
-body.theme-nocturne {
-  background: #0a0f14;
-}
-
 body.theme-nocturne #chat-input,
 body.theme-nocturne #chat-send,
 body.theme-nocturne #command-feed,

@@ -8,6 +8,11 @@
 body {
   margin: 0px;
   height: 100%;
+  /* In fixed mode the gameport is sized to the host's metrics, so when a
+     non-host's viewport is wider/taller than the host's, the body shows
+     through outside the gameport. Match it to the gameport bg so the
+     blank area reads as intentional surround rather than unstyled white. */
+  background: var(--fb-color-gameport-bg);
 }
 
 /*
@@ -77,6 +82,20 @@ body.mode-flex .GraphicsWindow {
   height: 100%;
   background: var(--fb-color-gameport-bg);
   margin: 0px;
+}
+
+/* Fixed mode pins #gameport to the host's pixel size, so non-hosts with
+   wider/taller viewports see body bg around it. The body bg matches the
+   gameport bg (above), so the play area would visually disappear into
+   the surround — outline draws a thin frame at the gameport edge to
+   make the play area legible. ``outline-offset: -1px`` paints the line
+   inside the gameport's box edge, which keeps the host's metrics-driven
+   inline width valid for GlkOte's measurement (jQuery's ``.width()``
+   ignores outline) and prevents the left edge from being clipped at
+   x=0 the way an outside outline would be. */
+body.mode-fixed #gameport {
+  outline: 1px solid var(--fb-sidebar-border);
+  outline-offset: -1px;
 }
 
 #sidebar {

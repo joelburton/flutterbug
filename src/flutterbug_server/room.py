@@ -28,6 +28,7 @@ from .protocol import (
     MP_ERROR,
     MP_INFO,
     MP_KEY,
+    MP_LAYOUT,
     MP_PLAYERS,
     MP_STATUS,
     MP_TYPING,
@@ -465,6 +466,17 @@ class SharedRoom(PersistSession):
     async def send_snapshot_to_client(self, clientid: int) -> None:
         if not self.snapshot.has_output:
             return
+
+        # In fixed mode a non-host late joiner must size their gameport to
+        # the host's metrics before GlkOte applies the snapshot — otherwise
+        # window rects rendered against the wrong ``current_metrics`` clip
+        # or stretch. ``_send_layout_to`` is a no-op in flex mode and for
+        # the host themselves, so it is safe to call unconditionally for
+        # non-host recipients.
+        conn = self.clients.get(clientid)
+        if conn and conn.get('sessionid') != self.host_sessionid:
+            await self._send_layout_to(clientid)
+
         outobj = self.snapshot.build_update()
         if outobj is None:
             return
@@ -525,12 +537,15 @@ class SharedRoom(PersistSession):
                 msg = self._rewrite_init_metrics_for_flex(obj, msg)
             else:
                 self._record_locked_metrics(obj)
+                await self._broadcast_layout_to_non_hosts()
 
         # Arrange handling depends on mode and host status:
         #  - flex: every arrange's metrics are substituted with locked_metrics
         #    so the VM stays pinned to status_cols, regardless of sender.
         #  - fixed + host: forward unchanged and refresh locked_metrics, so
         #    a host font/viewport change propagates to non-host substitutions.
+        #    Re-broadcast layout so non-hosts resize their gameport before
+        #    GlkOte applies the VM's new window pixel sizes.
         #  - fixed + non-host: substitute with locked_metrics, so the host's
         #    layout is preserved for the VM (the no-op update still advances
         #    the non-host's generation, unsticking their next send_response).
@@ -540,6 +555,7 @@ class SharedRoom(PersistSession):
                        and sender_sessionid == self.host_sessionid)
             if self.mode == MODE_FIXED and is_host:
                 self._record_locked_metrics(obj)
+                await self._broadcast_layout_to_non_hosts()
             else:
                 msg = self._substitute_arrange_metrics(obj, msg)
 
@@ -589,6 +605,39 @@ class SharedRoom(PersistSession):
         """
         obj['metrics'] = dict(self.locked_metrics)
         return json.dumps(obj)
+
+    async def _send_layout_to(self, clientid: int) -> None:
+        """Push the host's locked gameport metrics to one client.
+
+        In fixed mode the recipient sets ``#gameport``'s pixel size from
+        these so GlkOte's measured ``current_metrics`` matches the host's
+        and window rects render pixel-identical across clients.
+
+        No-op in flex mode (each client sizes its own gameport naturally
+        and chars wrap at the local panel width) or before the host's
+        first init has seeded ``locked_metrics``.
+        """
+        if self.mode != MODE_FIXED or self.locked_metrics is None:
+            return
+        await self.send_to_client(clientid, {
+            MP_KEY: MP_LAYOUT,
+            'width': self.locked_metrics.get('width'),
+            'height': self.locked_metrics.get('height'),
+        })
+
+    async def _broadcast_layout_to_non_hosts(self) -> None:
+        """Push the locked gameport metrics to every non-host client.
+
+        Called after the host's first init seeds ``locked_metrics`` and
+        after every subsequent host arrange refreshes them. The host is
+        intentionally skipped: their gameport already takes its natural
+        viewport size and re-applying the same value would just thrash.
+        """
+        if self.mode != MODE_FIXED or self.locked_metrics is None:
+            return
+        for clientid, conn in list(self.clients.items()):
+            if conn.get('sessionid') != self.host_sessionid:
+                await self._send_layout_to(clientid)
 
     async def _handle_chat(self, clientid: int, obj: JsonDict) -> None:
         text = str(obj.get('text', '')).strip()

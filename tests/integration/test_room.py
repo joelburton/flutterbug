@@ -177,6 +177,98 @@ async def test_fixed_mode_host_arrange_updates_locked_metrics(factory):
     assert sub_arranges[0]['metrics']['height'] == 800
 
 
+async def test_fixed_mode_late_joiner_receives_layout_before_snapshot(factory):
+    """In fixed mode the non-host's gameport must be pixel-resized to the
+    host's metrics *before* GlkOte applies the snapshot, otherwise the
+    right-anchored window rects render against the wrong current_metrics."""
+    room = _make_room(factory, mode='fixed')
+    a, _ = connect(room, 'A')
+    await room.handle_client_message(a, init_msg(0))
+    await drain(room)
+
+    b, sock_b = connect(room, 'B')
+    await room.handle_client_message(b, init_msg(0))
+    await drain(room)
+
+    layout_idx = next(
+        (i for i, m in enumerate(sock_b.messages)
+         if m.get('multiplayer') == 'layout'), None)
+    update_idx = next(
+        (i for i, m in enumerate(sock_b.messages)
+         if m.get('type') == 'update'), None)
+    assert layout_idx is not None, 'non-host should receive an MP_LAYOUT'
+    assert update_idx is not None, 'non-host should receive a snapshot update'
+    assert layout_idx < update_idx, 'layout must precede the update'
+
+    layout = sock_b.messages[layout_idx]
+    assert layout['width'] == 800
+    assert layout['height'] == 600
+
+
+async def test_fixed_mode_host_arrange_broadcasts_layout_to_non_hosts(factory):
+    """When the host resizes / changes font the non-hosts must learn the
+    new gameport size before the VM's follow-up update lands, so their
+    gameport is sized correctly when GlkOte renders the new window rects."""
+    room = _make_room(factory, mode='fixed')
+    a, _ = connect(room, 'A')
+    await room.handle_client_message(a, init_msg(0))
+    await drain(room)
+
+    b, sock_b = connect(room, 'B')
+    await room.handle_client_message(b, init_msg(0))
+    await drain(room)
+    sock_b.take_messages()
+
+    await room.handle_client_message(
+        a, arrange_msg(gen=1, width=1200, height=800))
+    await drain(room)
+
+    layouts = [m for m in sock_b.messages if m.get('multiplayer') == 'layout']
+    assert layouts, 'non-host should receive an MP_LAYOUT after host arrange'
+    assert layouts[-1]['width'] == 1200
+    assert layouts[-1]['height'] == 800
+
+
+async def test_fixed_mode_host_does_not_receive_layout(factory):
+    """The host already has the gameport size they want; sending them an
+    MP_LAYOUT would just thrash their inline styles."""
+    room = _make_room(factory, mode='fixed')
+    a, sock_a = connect(room, 'A')
+    await room.handle_client_message(a, init_msg(0))
+    await drain(room)
+    sock_a.take_messages()
+
+    await room.handle_client_message(
+        a, arrange_msg(gen=1, width=1200, height=800))
+    await drain(room)
+
+    layouts = [m for m in sock_a.messages if m.get('multiplayer') == 'layout']
+    assert layouts == []
+
+
+async def test_flex_mode_never_sends_layout(factory):
+    """Flex mode lets each client size their own gameport; pushing layout
+    would defeat that. Verify no MP_LAYOUT envelope is ever sent in flex
+    mode, even on late-joiner snapshot replay or host arrange."""
+    room = _make_room(factory, mode='flex', status_cols=60)
+    a, sock_a = connect(room, 'A')
+    await room.handle_client_message(
+        a, init_msg_with_metrics(gen=0, gridcharwidth=10.0))
+    await drain(room)
+
+    b, sock_b = connect(room, 'B')
+    await room.handle_client_message(b, init_msg(0))
+    await drain(room)
+
+    await room.handle_client_message(
+        a, arrange_msg(gen=1, width=2000, height=1500))
+    await drain(room)
+
+    for sock in (sock_a, sock_b):
+        layouts = [m for m in sock.messages if m.get('multiplayer') == 'layout']
+        assert layouts == []
+
+
 async def test_fixed_mode_host_identity_persists_across_refresh(factory):
     """Host refreshes their browser: same cookie/sessionid, new clientid.
     Their arranges must still be treated as host arranges (forwarded

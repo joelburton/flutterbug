@@ -51,3 +51,8 @@ MP_COMMAND: Final = 'command'
 MP_TYPING: Final = 'typing'
 MP_INFO: Final = 'info'
 MP_ERROR: Final = 'error'
+# Sent by the server in fixed mode to tell non-host clients to size their
+# ``#gameport`` div to the host's locked metrics, so GlkOte's measured
+# ``current_metrics`` matches the host's and window rects render
+# pixel-identical across clients.
+MP_LAYOUT: Final = 'layout'
