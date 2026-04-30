@@ -18,6 +18,29 @@ from flutterbug_server import cli
 
 
 # -----------------------------------------------------------------
+# Argument parser: --password / --no-password is mandatory
+# -----------------------------------------------------------------
+
+def test_cli_requires_password_or_no_password(monkeypatch, capsys):
+    """Public exposure default-on: forgetting to choose must fail loudly."""
+    monkeypatch.setattr('sys.argv', ['flutterbug', '--story', '/tmp/x.z5'])
+    with pytest.raises(SystemExit):
+        cli.main()
+    err = capsys.readouterr().err
+    assert '--password' in err and '--no-password' in err
+
+
+def test_cli_password_and_no_password_are_mutually_exclusive(monkeypatch, capsys):
+    monkeypatch.setattr('sys.argv', [
+        'flutterbug', '--story', '/tmp/x.z5',
+        '--password', 'hunter2', '--no-password'])
+    with pytest.raises(SystemExit):
+        cli.main()
+    err = capsys.readouterr().err
+    assert 'not allowed' in err or 'argument' in err
+
+
+# -----------------------------------------------------------------
 # URL regex specificity
 # -----------------------------------------------------------------
 

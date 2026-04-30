@@ -1,6 +1,6 @@
 # Flutterbug
 
-Flutterbug is a project that let's you play parser-style Interactive Fiction
+Flutterbug is a project that lets you play parser-style Interactive Fiction
 games collaboratively with one or more friends online.
 
 ![Flutterbug screenshot](screenshot.png)
@@ -44,10 +44,25 @@ uv tool install git+https://github.com/joelburton/flutterbug.git
 
 (when this hits version 1.0, I'll add it to PyPi so this is easier to install)
 
+## Authentication: pick a password (or explicitly opt out)
+
+Every flutterbug invocation must pick one of:
+
+- `--password "super secret"` — friends will be prompted for this
+  password on the sign-in page. **Recommended whenever the server is
+  reachable from outside your machine** (any tunnel, port-forward, LAN,
+  VPN, etc).
+- `--no-password` — anyone who reaches the URL can sign in. Only safe
+  on a fully trusted local network. Don't combine with `--tunnel` or
+  `--cloudflare` unless you genuinely intend a public game.
+
+Forgetting to pick will fail loudly rather than quietly exposing the
+server.
+
 ## Playing solo
 
 ```sh
-flutterbug --open --story=MyGameFile.z5
+flutterbug --no-password --open --story=MyGameFile.z5
 ```
 
 (or .z8 or .zblorb or .ulx or .t3 or whatever)
@@ -63,27 +78,26 @@ In order for your friends to connect to your game, you'll need to open a
 nothing else installed on your computer.
 
 ```sh
-flutterbug --open --tunnel --story=MyGameFile.z5
+flutterbug --password "super secret" --open --tunnel --story=MyGameFile.z5
 ```
 
 After a moment, this will open your browser to the same link you can send to
-friends.
+friends — together with the password.
 
 Quitting Flutterbug will disconnect that tunnel.
+
+> ⚠️ **About save files in your launch directory.** Anyone who signs in
+> can issue `save` and `restore` commands that read and write
+> `*.glksave` files in the directory you started flutterbug from. They
+> can also overwrite each others' saves, and the sign-in page lists the
+> save filenames in that directory to anyone who's signed in. Launch
+> flutterbug from a clean per-game directory, not from your home directory
+> or any any directory containing valuable data.
 
 ## Other options
 
 The `--help` command will show other options, including selecting a different
 port than 4000, and emitting more debugging-style log messages.
-
-### Keeping out creeps
-
-To keep unwanted people from joining your game, you can set a password; your
-friends will need to enter this when the join your game.
-
-```sh
-flutterbug --password "super secret" ... rest of options ...
-```
 
 ### Other tunneling options
 
@@ -92,9 +106,8 @@ need to install `cloudflared` on your computer. You don't need a Cloudflare
 account. Cloudflare may scale better for larger friend groups:
 
 ```sh
-flutterbug --cloudflare --tunnel --open --story=MyGameFile.z5
+flutterbug --password "super secret" --cloudflare --open --story=MyGameFile.z5
 ```
-
 
 ### How `--open` interacts with tunnels
 

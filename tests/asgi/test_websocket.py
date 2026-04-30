@@ -84,6 +84,45 @@ def test_websocket_falls_back_to_player_prefix_when_name_blank(client):
         assert names[0].startswith('Player-')
 
 
+def test_websocket_rejects_foreign_origin_with_1008(client):
+    """A signed-in user visiting a malicious page must not be hijackable
+    via cross-origin WS. Origin is validated before session check."""
+    client.cookies.clear()
+    r = client.post('/', data={'signin': '1'})
+    assert r.status_code == 200
+
+    with pytest.raises(WebSocketDisconnect) as exc_info:
+        with client.websocket_connect(
+                '/websocket?name=Mallory',
+                headers={'origin': 'https://evil.example.com'}):
+            pass
+    assert exc_info.value.code == 1008
+
+
+def test_websocket_accepts_localhost_origin(client):
+    client.cookies.clear()
+    r = client.post('/', data={'signin': '1'})
+    assert r.status_code == 200
+
+    with client.websocket_connect(
+            '/websocket?name=Alice',
+            headers={'origin': 'http://localhost:4000'}) as ws:
+        roster = drain_until(ws, lambda m: m.get('multiplayer') == 'players')
+        assert any(p['name'] == 'Alice' for p in roster['players'])
+
+
+def test_websocket_accepts_known_tunnel_origin(client):
+    client.cookies.clear()
+    r = client.post('/', data={'signin': '1'})
+    assert r.status_code == 200
+
+    with client.websocket_connect(
+            '/websocket?name=Alice',
+            headers={'origin': 'https://gentle-orange.trycloudflare.com'}) as ws:
+        roster = drain_until(ws, lambda m: m.get('multiplayer') == 'players')
+        assert any(p['name'] == 'Alice' for p in roster['players'])
+
+
 def test_chat_fans_out_without_touching_vm(client, vm_factory):
     with connect_as(client, 'Alice') as a, connect_as(client, 'Bob') as b:
         a.send_text(init_frame(0))

@@ -262,13 +262,24 @@ def main():
     parser.add_argument(
         '--secret', default=None,
         help='secret key for session signing (random per-run if omitted)')
-    parser.add_argument(
+    auth_group = parser.add_mutually_exclusive_group(required=True)
+    auth_group.add_argument(
         '--password', default=None,
-        help='if set, players must enter this password on the sign-in page')
+        help='players must enter this password on the sign-in page')
+    auth_group.add_argument(
+        '--no-password', action='store_true',
+        help='allow anyone who reaches the URL to sign in. Only safe on a '
+             'trusted local network — never combine with --tunnel/--cloudflare '
+             'or any other public exposure.')
     args = parser.parse_args()
 
     if not args.command and not args.story:
         parser.error('Pass --story PATH and/or --command CMD.')
+
+    if args.no_password:
+        log.warning(
+            'Running with --no-password: anyone who reaches the URL can '
+            'sign in. Only safe on a trusted local network.')
 
     if args.story:
         args.story_path = os.path.abspath(args.story)

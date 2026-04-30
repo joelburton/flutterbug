@@ -13,6 +13,7 @@ import tempfile
 from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Annotated, Optional
+from urllib.parse import urlparse
 
 from fastapi import FastAPI, Form, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
@@ -30,6 +31,43 @@ AVAILABLE_THEMES = {
     'flutterbug': 'theme-flutterbug.css',
     'nocturne': 'theme-nocturne.css',
 }
+
+# Hostname suffixes for tunnel providers we ship support for. A signed-in
+# player's browser will set Origin to the tunnel host, but tunnels often
+# rewrite the Host header to localhost upstream, so a naive Origin==Host
+# check rejects legitimate tunneled connections. These suffixes let those
+# through without opening up arbitrary cross-origin WS clients.
+TUNNEL_ORIGIN_SUFFIXES = ('.trycloudflare.com', '.lhr.life')
+
+
+def _is_allowed_origin(origin: Optional[str], host: Optional[str]) -> bool:
+    """Validate a websocket Origin header against the request's Host.
+
+    Browsers always send Origin on WebSocket connections; non-browser
+    clients (test fixtures, scripted tools) don't. A missing Origin is
+    therefore not a CSRF vector and is permitted. When present we accept:
+      - localhost / 127.0.0.1 on any port,
+      - hostnames whose suffix matches a known tunnel provider, or
+      - an exact hostname match against the request's Host header
+        (covers reverse proxies that preserve Host).
+    Everything else is refused so a malicious page can't piggyback on a
+    signed-in user's session cookie to drive the shared VM.
+    """
+    if not origin:
+        return True
+    parsed = urlparse(origin)
+    h = parsed.hostname
+    if not h:
+        return False
+    if h in ('localhost', '127.0.0.1'):
+        return True
+    if any(h.endswith(suffix) for suffix in TUNNEL_ORIGIN_SUFFIXES):
+        return True
+    if host:
+        host_h = host.split(':', 1)[0]
+        if h == host_h:
+            return True
+    return False
 
 
 def create_app(settings) -> FastAPI:
@@ -181,6 +219,14 @@ def create_app(settings) -> FastAPI:
 
     @app.websocket('/websocket')
     async def ws_endpoint(websocket: WebSocket, name: str = Query('')):
+        origin = websocket.headers.get('origin')
+        host = websocket.headers.get('host')
+        if not _is_allowed_origin(origin, host):
+            log.warning(
+                'Rejecting websocket from origin=%r host=%r', origin, host)
+            await websocket.close(code=1008)
+            return
+
         session = websocket.scope.get('session', {})
         sessionid = session.get('sessionid')
         if not sessionid:
