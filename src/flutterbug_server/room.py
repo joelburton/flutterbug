@@ -254,13 +254,22 @@ class SharedRoom(PersistSession):
         self.close_task: asyncio.Task | None = None
         self.specialinput_clientid: int | None = None
         self.status_message = ''
-        # In flex mode, the metrics block we sent to the VM in the first
-        # init. Subsequent arranges have their metrics replaced with this
-        # before forwarding, so the VM sees "no change" and emits a no-op
-        # update — that update advances ``generation`` on the client, which
-        # GlkOte requires to unblock its next ``send_response`` (otherwise
-        # the line input that follows a browser zoom is silently dropped).
+        # The metrics block currently driving the VM's layout. In flex
+        # mode this is the host's first-init metrics with width rewritten
+        # to status_cols cells; in fixed mode it tracks the host's latest
+        # init/arrange. Non-host arranges (and, in flex, all arranges)
+        # have their metrics substituted with this before forwarding, so
+        # the VM sees "no change" and emits a no-op update — that update
+        # advances ``generation`` on the client, which GlkOte requires to
+        # unblock its next ``send_response`` (otherwise line input that
+        # follows a browser zoom is silently dropped).
         self.locked_metrics: dict | None = None
+        # Sessionid of the first client whose init reached the VM. In
+        # fixed mode their arranges drive the layout for everyone else;
+        # in flex mode this is informational. Tracked by sessionid (not
+        # clientid) so a host browser refresh — same cookie, new
+        # websocket — keeps the host role.
+        self.host_sessionid: str | None = None
 
     def __repr__(self) -> str:
         return '<SharedRoom>'
@@ -274,6 +283,7 @@ class SharedRoom(PersistSession):
         self.player_roster.clear()
         self.next_color_index = 0
         self.locked_metrics = None
+        self.host_sessionid = None
 
     # -----------------------------------------------------------------
     # Logging / image-URL synthesis
@@ -499,30 +509,39 @@ class SharedRoom(PersistSession):
             return
 
         # Late joiners must sync from snapshot. Forwarding their init/refresh
-        # would reset the shared VM. In fixed mode ``arrange`` is *not*
-        # intercepted: it's a regular mid-session resize event that must
-        # reach the VM so window pixel sizes follow new char metrics
-        # (Cmd-+, in-app font stepper). In flex mode the VM's notion of
-        # window sizes is locked at the host's first init; we still forward
-        # every arrange but rewrite its metrics to match the locked init,
-        # so the VM emits a benign no-op update that advances generation
-        # (GlkOte's send_response is gated on generation moving forward).
+        # would reset the shared VM.
         if evtype in SNAPSHOT_REPLAY_EVENTS and self.snapshot.has_output:
             await self.send_snapshot_to_client(clientid)
             return
-        if (self.mode == MODE_FLEX
-                and evtype == EVT_ARRANGE
-                and self.locked_metrics is not None):
-            msg = self._rewrite_arrange_metrics_for_flex(obj, msg)
 
-        # In flex mode, the very first init that reaches the VM also locks
-        # the VM's gameport width to status_cols character cells. The VM
-        # never learns the host's actual viewport width, so its layout is
-        # stable for all later joiners regardless of who has what screen.
-        if (self.mode == MODE_FLEX
-                and evtype == EVT_INIT
-                and not self.snapshot.has_output):
-            msg = self._rewrite_init_metrics_for_flex(obj, msg)
+        # The first init that reaches the VM claims this client's session
+        # as the host — their arranges drive layout in fixed mode and their
+        # gameport width seeds locked_metrics in both modes.
+        if evtype == EVT_INIT and not self.snapshot.has_output:
+            sender_sessionid = self.clients.get(clientid, {}).get('sessionid')
+            if sender_sessionid is not None:
+                self.host_sessionid = sender_sessionid
+            if self.mode == MODE_FLEX:
+                msg = self._rewrite_init_metrics_for_flex(obj, msg)
+            else:
+                self._record_locked_metrics(obj)
+
+        # Arrange handling depends on mode and host status:
+        #  - flex: every arrange's metrics are substituted with locked_metrics
+        #    so the VM stays pinned to status_cols, regardless of sender.
+        #  - fixed + host: forward unchanged and refresh locked_metrics, so
+        #    a host font/viewport change propagates to non-host substitutions.
+        #  - fixed + non-host: substitute with locked_metrics, so the host's
+        #    layout is preserved for the VM (the no-op update still advances
+        #    the non-host's generation, unsticking their next send_response).
+        if evtype == EVT_ARRANGE and self.locked_metrics is not None:
+            sender_sessionid = self.clients.get(clientid, {}).get('sessionid')
+            is_host = (sender_sessionid is not None
+                       and sender_sessionid == self.host_sessionid)
+            if self.mode == MODE_FIXED and is_host:
+                self._record_locked_metrics(obj)
+            else:
+                msg = self._substitute_arrange_metrics(obj, msg)
 
         if not await self._allow_through_gen_check(clientid, obj):
             return
@@ -550,15 +569,23 @@ class SharedRoom(PersistSession):
         self.locked_metrics = dict(metrics)
         return json.dumps(obj)
 
-    def _rewrite_arrange_metrics_for_flex(
-        self, obj: JsonDict, msg: str
-    ) -> str:
-        """Substitute the arrange's metrics with the locked init metrics.
+    def _record_locked_metrics(self, obj: JsonDict) -> None:
+        """Snapshot ``obj['metrics']`` into ``self.locked_metrics`` verbatim.
 
-        Forwarded to the VM verbatim, the VM sees the same dimensions it
-        already has and emits a no-op update — the goal is the generation
-        bump, not any layout change. Caller has already verified
-        ``self.locked_metrics is not None``.
+        Used in fixed mode for the host's first init and for subsequent
+        host arranges. Silently ignores a missing/malformed metrics block.
+        """
+        metrics = obj.get('metrics')
+        if isinstance(metrics, dict):
+            self.locked_metrics = dict(metrics)
+
+    def _substitute_arrange_metrics(self, obj: JsonDict, msg: str) -> str:
+        """Replace the arrange's metrics block with ``self.locked_metrics``.
+
+        Forwarded to the VM, this looks like "no change" — the VM emits a
+        no-op update whose only purpose is the ``generation`` bump that
+        unblocks GlkOte's next ``send_response``. Caller has already
+        verified ``self.locked_metrics is not None``.
         """
         obj['metrics'] = dict(self.locked_metrics)
         return json.dumps(obj)

@@ -87,10 +87,11 @@ async def test_second_client_resyncs_from_snapshot_no_new_vm_init(room, factory)
     assert any(m.get('type') == 'update' for m in sock_b.messages)
 
 
-async def test_fixed_mode_arrange_from_established_client_reaches_vm(factory):
-    """In fixed mode, mid-session resize / font scale change must reach the
-    VM so it can re-emit window pixel sizes for the new char metrics.
-    Otherwise window frames stay frozen and content clips."""
+async def test_fixed_mode_host_arrange_reaches_vm_unchanged(factory):
+    """In fixed mode, the host's resize / font change must reach the VM
+    with their actual metrics so the VM re-emits window pixel sizes for
+    the new char metrics. Otherwise window frames stay frozen and content
+    clips."""
     room = _make_room(factory, mode='fixed')
     a, sock_a = connect(room, 'A')
     await room.handle_client_message(a, init_msg(0))
@@ -98,15 +99,110 @@ async def test_fixed_mode_arrange_from_established_client_reaches_vm(factory):
     sock_a.take_messages()
     inputs_before = list(factory.instances[0].inputs)
 
-    await room.handle_client_message(a, arrange_msg(gen=1))
+    await room.handle_client_message(
+        a, arrange_msg(gen=1, width=1000, height=700))
     await drain(room)
 
     new_inputs = factory.instances[0].inputs[len(inputs_before):]
-    assert any(inp['type'] == 'arrange' for inp in new_inputs), (
-        f'arrange did not reach VM; new inputs were {new_inputs}'
-    )
+    arranges = [inp for inp in new_inputs if inp['type'] == 'arrange']
+    assert len(arranges) == 1, f'expected one arrange, got {arranges}'
+    # Host's metrics passed through unchanged (not substituted with the
+    # init's 800x600).
+    assert arranges[0]['metrics']['width'] == 1000
+    assert arranges[0]['metrics']['height'] == 700
     # And the VM's response (a fresh update) is broadcast back.
     assert any(m.get('type') == 'update' for m in sock_a.messages)
+
+
+async def test_fixed_mode_first_init_claims_host_sessionid(factory):
+    room = _make_room(factory, mode='fixed')
+    a, _ = connect(room, 'A')
+    await room.handle_client_message(a, init_msg(0))
+    await drain(room)
+
+    assert room.host_sessionid == 'sess-A'
+    # locked_metrics seeded from the init so non-host arranges have
+    # something to substitute against.
+    assert room.locked_metrics == {'width': 800, 'height': 600}
+
+
+async def test_fixed_mode_non_host_arrange_uses_locked_metrics(factory):
+    """Late joiner with a smaller viewport must not be able to perturb
+    the VM's layout: their arrange is forwarded with the host's metrics."""
+    room = _make_room(factory, mode='fixed')
+    a, _ = connect(room, 'A')
+    await room.handle_client_message(a, init_msg(0))
+    await drain(room)
+
+    b, _ = connect(room, 'B')
+    inputs_before = list(factory.instances[0].inputs)
+    await room.handle_client_message(
+        b, arrange_msg(gen=1, width=400, height=300))
+    await drain(room)
+
+    new_inputs = factory.instances[0].inputs[len(inputs_before):]
+    arranges = [inp for inp in new_inputs if inp['type'] == 'arrange']
+    assert len(arranges) == 1
+    # Host's init metrics are used, not B's 400x300.
+    assert arranges[0]['metrics']['width'] == 800
+    assert arranges[0]['metrics']['height'] == 600
+
+
+async def test_fixed_mode_host_arrange_updates_locked_metrics(factory):
+    """A later non-host arrange substitutes against the host's *latest*
+    metrics, not the original init's — so a host font/viewport change
+    propagates."""
+    room = _make_room(factory, mode='fixed')
+    a, _ = connect(room, 'A')
+    await room.handle_client_message(a, init_msg(0))
+    await drain(room)
+
+    # Host changes their viewport / font.
+    await room.handle_client_message(
+        a, arrange_msg(gen=1, width=1200, height=800))
+    await drain(room)
+
+    # Non-host arrives, sends their own arrange.
+    b, _ = connect(room, 'B')
+    inputs_before = list(factory.instances[0].inputs)
+    await room.handle_client_message(
+        b, arrange_msg(gen=2, width=400, height=300))
+    await drain(room)
+
+    new_inputs = factory.instances[0].inputs[len(inputs_before):]
+    sub_arranges = [inp for inp in new_inputs if inp['type'] == 'arrange']
+    assert len(sub_arranges) == 1
+    # Substituted with the host's UPDATED metrics, not the init's 800x600.
+    assert sub_arranges[0]['metrics']['width'] == 1200
+    assert sub_arranges[0]['metrics']['height'] == 800
+
+
+async def test_fixed_mode_host_identity_persists_across_refresh(factory):
+    """Host refreshes their browser: same cookie/sessionid, new clientid.
+    Their arranges must still be treated as host arranges (forwarded
+    unchanged), not substituted as a non-host's would be."""
+    room = _make_room(factory, mode='fixed')
+    a1, _ = connect(room, 'A')
+    await room.handle_client_message(a1, init_msg(0))
+    await drain(room)
+    room.remove_client(a1)
+
+    # Reconnect with same name → same sessionid='sess-A' (the test's
+    # connect helper derives sessionid from the player name).
+    a2, _ = connect(room, 'A')
+    assert a1 != a2
+    inputs_before = list(factory.instances[0].inputs)
+    await room.handle_client_message(
+        a2, arrange_msg(gen=1, width=1200, height=800))
+    await drain(room)
+
+    new_inputs = factory.instances[0].inputs[len(inputs_before):]
+    arranges = [inp for inp in new_inputs if inp['type'] == 'arrange']
+    assert len(arranges) == 1
+    # Host's metrics passed through, proving the new clientid is still
+    # recognized as the host via sessionid.
+    assert arranges[0]['metrics']['width'] == 1200
+    assert arranges[0]['metrics']['height'] == 800
 
 
 # --------------------------------------------------------------------
