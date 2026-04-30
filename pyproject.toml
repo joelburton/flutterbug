@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "flutterbug"
-version = "0.91"
+version = "0.92"
 description = "Collaborative parser IF web server based on FastAPI/RemGlk"
 readme = "readme.md"
 requires-python = ">=3.10"
