@@ -254,6 +254,13 @@ class SharedRoom(PersistSession):
         self.close_task: asyncio.Task | None = None
         self.specialinput_clientid: int | None = None
         self.status_message = ''
+        # In flex mode, the metrics block we sent to the VM in the first
+        # init. Subsequent arranges have their metrics replaced with this
+        # before forwarding, so the VM sees "no change" and emits a no-op
+        # update — that update advances ``generation`` on the client, which
+        # GlkOte requires to unblock its next ``send_response`` (otherwise
+        # the line input that follows a browser zoom is silently dropped).
+        self.locked_metrics: dict | None = None
 
     def __repr__(self) -> str:
         return '<SharedRoom>'
@@ -266,6 +273,7 @@ class SharedRoom(PersistSession):
         self.status_message = ''
         self.player_roster.clear()
         self.next_color_index = 0
+        self.locked_metrics = None
 
     # -----------------------------------------------------------------
     # Logging / image-URL synthesis
@@ -495,16 +503,17 @@ class SharedRoom(PersistSession):
         # intercepted: it's a regular mid-session resize event that must
         # reach the VM so window pixel sizes follow new char metrics
         # (Cmd-+, in-app font stepper). In flex mode the VM's notion of
-        # window sizes is locked at the host's first init, so we drop
-        # every subsequent arrange — the host's local CSS still re-renders
-        # using their own metrics, and other players are unaffected.
+        # window sizes is locked at the host's first init; we still forward
+        # every arrange but rewrite its metrics to match the locked init,
+        # so the VM emits a benign no-op update that advances generation
+        # (GlkOte's send_response is gated on generation moving forward).
         if evtype in SNAPSHOT_REPLAY_EVENTS and self.snapshot.has_output:
             await self.send_snapshot_to_client(clientid)
             return
         if (self.mode == MODE_FLEX
                 and evtype == EVT_ARRANGE
-                and self.snapshot.has_output):
-            return
+                and self.locked_metrics is not None):
+            msg = self._rewrite_arrange_metrics_for_flex(obj, msg)
 
         # In flex mode, the very first init that reaches the VM also locks
         # the VM's gameport width to status_cols character cells. The VM
@@ -525,9 +534,11 @@ class SharedRoom(PersistSession):
     def _rewrite_init_metrics_for_flex(self, obj: JsonDict, msg: str) -> str:
         """Pin metrics.width to ``status_cols`` cells for the host's first init.
 
-        Mutates ``obj`` in place and returns a re-serialized payload. If the
-        metrics block is missing or malformed we leave it alone — the VM will
-        report its own error and the room is no worse off than today.
+        Mutates ``obj`` in place, snapshots the rewritten metrics into
+        ``self.locked_metrics`` for later arrange substitution, and returns
+        a re-serialized payload. If the metrics block is missing or malformed
+        we leave it alone — the VM will report its own error and the room is
+        no worse off than today.
         """
         metrics = obj.get('metrics')
         if not isinstance(metrics, dict):
@@ -536,6 +547,20 @@ class SharedRoom(PersistSession):
         if not isinstance(cellwidth, (int, float)) or cellwidth <= 0:
             return msg
         metrics['width'] = self.status_cols * cellwidth
+        self.locked_metrics = dict(metrics)
+        return json.dumps(obj)
+
+    def _rewrite_arrange_metrics_for_flex(
+        self, obj: JsonDict, msg: str
+    ) -> str:
+        """Substitute the arrange's metrics with the locked init metrics.
+
+        Forwarded to the VM verbatim, the VM sees the same dimensions it
+        already has and emits a no-op update — the goal is the generation
+        bump, not any layout change. Caller has already verified
+        ``self.locked_metrics is not None``.
+        """
+        obj['metrics'] = dict(self.locked_metrics)
         return json.dumps(obj)
 
     async def _handle_chat(self, clientid: int, obj: JsonDict) -> None:

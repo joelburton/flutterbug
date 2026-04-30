@@ -110,8 +110,11 @@ async def test_fixed_mode_arrange_from_established_client_reaches_vm(factory):
 
 
 # --------------------------------------------------------------------
-# Flex mode: VM is locked at the host's first init. After that, every
-# arrange (host font stepper, browser resize, late joiner) is dropped.
+# Flex mode: VM is locked at the host's first init. Subsequent arranges
+# from any client still reach the VM but with their metrics replaced by
+# the locked-init metrics, so the VM emits a benign no-op update — that
+# generation bump is what unsticks GlkOte's send_response gate after a
+# browser-zoom arrange.
 # --------------------------------------------------------------------
 
 async def test_flex_mode_first_init_rewrites_width_to_status_cols(factory):
@@ -147,7 +150,11 @@ async def test_flex_mode_first_init_without_gridcharwidth_passes_through(factory
     assert init_seen['metrics']['width'] == 800
 
 
-async def test_flex_mode_drops_arrange_after_first_init(factory):
+async def test_flex_mode_arrange_after_first_init_uses_locked_metrics(factory):
+    """Arrange still reaches the VM (so the generation can advance and
+    GlkOte's next send_response unblocks), but its metrics block is
+    replaced with the locked init metrics — the VM sees no change and
+    emits a no-op update."""
     room = _make_room(factory, mode='flex', status_cols=60)
     a, _ = connect(room, 'A')
     await room.handle_client_message(
@@ -155,16 +162,21 @@ async def test_flex_mode_drops_arrange_after_first_init(factory):
     await drain(room)
     inputs_before = list(factory.instances[0].inputs)
 
-    await room.handle_client_message(a, arrange_msg(gen=1))
+    # Player resizes / zooms — would normally send their own width/height.
+    await room.handle_client_message(
+        a, arrange_msg(gen=1, width=2000, height=1500))
     await drain(room)
 
     new_inputs = factory.instances[0].inputs[len(inputs_before):]
-    assert not any(inp['type'] == 'arrange' for inp in new_inputs), (
-        f'arrange leaked to VM in flex mode; new inputs were {new_inputs}'
-    )
+    arranges = [inp for inp in new_inputs if inp['type'] == 'arrange']
+    assert len(arranges) == 1, f'expected one arrange, got {arranges}'
+    # Locked metrics: width = 60 * 10.0 = 600 from the init rewrite.
+    assert arranges[0]['metrics']['width'] == 600
+    assert arranges[0]['metrics']['height'] == 600
+    assert arranges[0]['metrics']['gridcharwidth'] == 10.0
 
 
-async def test_flex_mode_drops_arrange_from_late_joiner(factory):
+async def test_flex_mode_arrange_from_late_joiner_uses_locked_metrics(factory):
     """A second client whose viewport differs from the host must not be
     able to perturb the VM's locked metrics by sending its own arrange."""
     room = _make_room(factory, mode='flex', status_cols=60)
@@ -175,11 +187,15 @@ async def test_flex_mode_drops_arrange_from_late_joiner(factory):
 
     b, _ = connect(room, 'B')
     inputs_before = list(factory.instances[0].inputs)
-    await room.handle_client_message(b, arrange_msg(gen=1))
+    await room.handle_client_message(
+        b, arrange_msg(gen=1, width=400, height=300))
     await drain(room)
 
     new_inputs = factory.instances[0].inputs[len(inputs_before):]
-    assert not any(inp['type'] == 'arrange' for inp in new_inputs)
+    arranges = [inp for inp in new_inputs if inp['type'] == 'arrange']
+    assert len(arranges) == 1
+    assert arranges[0]['metrics']['width'] == 600
+    assert arranges[0]['metrics']['height'] == 600
 
 
 async def test_simultaneous_inits_do_not_double_init_vm(room, factory):
