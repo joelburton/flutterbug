@@ -74,6 +74,7 @@ def create_app(settings) -> FastAPI:
     log = logging.getLogger('uvicorn.error')
     static_dir = os.path.join(MODULE_DIR, 'static')
     template_dir = os.path.join(MODULE_DIR, 'templates')
+    asset_version = secrets.token_hex(4)
     resource_url_prefix = '/static/resource'
     resource_tmpdir = tempfile.TemporaryDirectory(prefix='flutterbug-resource-')
     resource_dir = resource_tmpdir.name
@@ -130,6 +131,7 @@ def create_app(settings) -> FastAPI:
             'themes': themes,
             'game_info': getattr(app.state, 'story_metadata', None),
             'password_required': getattr(settings, 'password', None) is not None,
+            'asset_version': asset_version,
         }
 
     def password_ok(provided: Optional[str]) -> bool:
@@ -193,6 +195,7 @@ def create_app(settings) -> FastAPI:
             'playername': playername,
             'themename': themename,
             'theme_css': AVAILABLE_THEMES[themename],
+            'asset_version': asset_version,
         })
         return HTMLResponse(html)
 
