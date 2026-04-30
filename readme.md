@@ -17,7 +17,6 @@ It can play:
 ## Requirements
 
 - Python
-
 - Node
 
 You may have these already; if not, you can get both from your OS package system.
