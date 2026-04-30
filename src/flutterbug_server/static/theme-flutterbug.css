@@ -1,0 +1,119 @@
+/*
+ * Flutterbug UI theme.
+ *
+ * This file owns visual styling for the play page shell and sidebar.
+ * GlkOte runtime JS still controls dynamic window geometry and paging markers.
+ *
+ * Sizes are expressed in rem so the layout responds to the browser's
+ * default font-size preference and to page zoom (Cmd-+) without going
+ * lopsided. Baseline is 1rem = 16px; existing px values were divided
+ * by 16 to keep the original visual proportions.
+ */
+
+:root {
+  --fb-font-serif: Georgia, serif;
+  --fb-color-gameport-bg: #ccaa88;
+
+  /* Multiplier the in-app A−/A+ stepper writes onto documentElement.
+     The buffer and grid font sizes pick it up via calc(). */
+  --glk-game-font-scale: 1;
+
+  --glk-window-bg: #fff8ef;
+  --glk-buffer-text-color: #2f2417;
+  --glk-buffer-font-family: Georgia, serif;
+  --glk-buffer-font-size: calc(1.125rem * var(--glk-game-font-scale));
+  --glk-buffer-line-height: 1.45;
+  --glk-buffer-padding: 0.5rem 0.75rem 0.5rem 0.75rem;
+
+  --glk-grid-bg: #f1dbc0;
+  --glk-grid-text-color: #3a2d20;
+  --glk-grid-font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+  --glk-grid-font-size: calc(0.875rem * var(--glk-game-font-scale));
+  --glk-grid-padding: 0.375rem 0.625rem 0.375rem 0.625rem;
+
+  --glk-moreprompt-bg: #6b3d1e;
+  --glk-moreprompt-color: #fff6db;
+  --glk-moreprompt-opacity: 0.72;
+  --glk-moreprompt-radius: 0.375rem;
+  --glk-previousmark-bg: #b89f87;
+  --glk-graphics-bg: #fff8ef;
+  --glk-style-blockquote-bg: #f5e6c9;
+  --glk-style-input-color: #4b1f12;
+
+  /* clamp() so the sidebar shares space sensibly at all zoom levels:
+     a 13rem floor keeps the chat input usable, 22vw lets it grow with
+     wide viewports, 17rem caps it on huge displays. */
+  --fb-sidebar-width: clamp(13rem, 22vw, 17rem);
+  --fb-sidebar-bg: #efe6d8;
+  --fb-sidebar-border: #bca98a;
+  --fb-sidebar-text: #2a241c;
+
+  --fb-brand-gap: 0.5rem;
+  --fb-brand-margin-y: 0.625rem;
+  --fb-brand-margin-x: 0.875rem;
+  --fb-brand-padding-bottom: 0.5rem;
+  --fb-brand-divider: #d2c1a6;
+  --fb-brand-icon-size: 2rem;
+  --fb-brand-icon-radius: 0.375rem;
+  --fb-brand-font-size: 1.25rem;
+  --fb-brand-color: #2f3f56;
+
+  --fb-h3-margin-top: 0.75rem;
+  --fb-h3-margin-x: 0.875rem;
+  --fb-h3-margin-bottom: 0.375rem;
+  --fb-h3-size: 0.9375rem;
+
+  --fb-room-label-margin-top: 0.625rem;
+  --fb-room-label-margin-x: 0.875rem;
+  --fb-room-label-size: 0.75rem;
+  --fb-room-label-color: #4e4437;
+
+  --fb-status-margin-top: 0.375rem;
+  --fb-status-margin-x: 0.875rem;
+  --fb-status-margin-bottom: 0.25rem;
+  --fb-status-size: 0.75rem;
+  --fb-status-color: #7a2f14;
+  --fb-status-min-height: 1rem;
+
+  --fb-players-margin-x: 0.875rem;
+  --fb-players-padding-left: 1.125rem;
+  --fb-players-max-height: 7.5rem;
+  --fb-player-fallback-color: #555;
+
+  --fb-feed-margin-x: 0.875rem;
+  --fb-command-margin-bottom: 0.5rem;
+  --fb-chat-margin-bottom: 0.25rem;
+  --fb-feed-padding: 0.5rem;
+  --fb-feed-border: #c6b59a;
+  --fb-feed-bg: #f8f3ea;
+
+  --fb-chat-row-margin-bottom: 0.625rem;
+  --fb-chat-row-gap: 0.25rem;
+  --fb-chat-input-font-size: 0.8125rem;
+  --fb-chat-input-padding-y: 0.25rem;
+  --fb-chat-input-padding-x: 0.375rem;
+  --fb-chat-input-color: #2a241c;
+  --fb-chat-input-placeholder-color: #8a7a66;
+  --fb-chat-input-border: #bca98a;
+  --fb-chat-input-radius: 0.1875rem;
+  --fb-chat-input-bg: #fdf9f3;
+
+  --fb-chat-send-font-size: 0.75rem;
+  --fb-chat-send-padding-y: 0.25rem;
+  --fb-chat-send-padding-x: 0.5rem;
+  --fb-chat-send-color: #2a241c;
+  --fb-chat-send-border: #bca98a;
+  --fb-chat-send-radius: 0.1875rem;
+  --fb-chat-send-bg: #ddd0bc;
+
+  --fb-feed-line-font-size: 0.8125rem;
+  --fb-feed-line-height: 1.35;
+  --fb-feed-line-margin-bottom: 0.3125rem;
+
+  /* Reference only — CSS custom properties can't be used inside @media
+     queries, so the literal 660px in theme-base.css is the source of truth. */
+  --fb-mobile-breakpoint: 660px;
+  --fb-mobile-sidebar-height: 11.25rem;
+  --fb-mobile-players-max-height: 3.75rem;
+  --fb-mobile-feed-height: 3.125rem;
+}

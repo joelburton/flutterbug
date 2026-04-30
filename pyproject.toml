@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flutterbug"
+version = "0.9"
+description = "Collaborative parser IF web server based on FastAPI/RemGlk"
+readme = "readme.md"
+requires-python = ">=3.10"
+dependencies = [
+  "fastapi>=0.110",
+  "uvicorn[standard]>=0.29",
+  "jinja2>=3.1",
+  "python-multipart>=0.0.9",
+  "itsdangerous>=2.1",
+  "ifdb @ git+https://github.com/joelburton/ifdb.git",
+  "babel-if @ git+https://github.com/joelburton/babel-if-python.git",
+  "dnspython>=2.4",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8",
+  "pytest-asyncio>=0.23",
+  "httpx>=0.27",
+  "ruff>=0.6",
+]
+
+[project.scripts]
+flutterbug = "flutterbug_server.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+flutterbug_server = [
+  "templates/*",
+  "static/*",
+  "static/resource/*",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B"]
+ignore = [
+  "E501",  # long lines — server emits a few JSON literals that are fine
+  "B008",  # FastAPI uses Query/Form() defaults idiomatically
+]

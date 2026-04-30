@@ -1,0 +1,113 @@
+# Flutterbug
+
+Flutterbug is a project that let's you play parser-style Interactive Fiction
+games collaboratively with one or more friends online.
+
+It can play:
+
+- ZMachine games (such as Infocom games)
+- Glulx games
+- TADS
+- Hugo
+- Scare
+
+
+## Requirements
+
+- Python
+
+- Node
+
+You may have these already; if not, you can get both from your OS package system.
+
+- **MacOS**: `brew install node python uv`
+- **Linux**: use the installer for your distro
+- **Windows**: `winget install OpenJS.NodeJS.LTS Python.Python.3.12 astral-sh.uv`
+
+(closing your terminal window and re-opening may be required after you do this)
+
+## Installing
+
+This installs "emglken", which comes with a bunch of IF virtual machines:
+
+```sh
+npm install -g emglken
+```
+
+Install Flutterbug:
+
+```sh
+uv tool install git+https://github.com/joelburton/flutterbug.git
+```
+
+(when this hits version 1.0, I'll add it to PyPi so this is easier to install)
+
+## Playing solo
+
+```sh
+flutterbug --open --story=MyGameFile.z5
+```
+
+(or .z8 or .zblorb or .ulx or .t3 or whatever)
+
+`--open` waits for the server to come up on http://localhost:4000/ and
+opens it in your default browser.
+
+## Playing with friends (public tunnel)
+
+In order for your friends to connect to your game, you'll need to open a
+"tunnel" to the server on your computer. Flutterbug out of the box supports
+[Localhost.run](https://localhost.run) tunnels. These are free and require
+nothing else installed on your computer.
+
+```sh
+flutterbug --open --tunnel --story=MyGameFile.z5
+```
+
+After a moment, this will open your browser to the same link you can send to
+friends.
+
+Quitting Flutterbug will disconnect that tunnel.
+
+## Other options
+
+The `--help` command will show other options, including selecting a different
+port than 4000, and emitting more debugging-style log messages.
+
+### Keeping out creeps
+
+To keep unwanted people from joining your game, you can set a password; your
+friends will need to enter this when the join your game.
+
+```sh
+flutterbug --password "super secret" ... rest of options ...
+```
+
+### Other tunneling options
+
+You can use Cloudflare tunneling rather than Localhost.run. To do so, you'll
+need to install `cloudflared` on your computer. You don't need a Cloudflare
+account. Cloudflare may scale better for larger friend groups:
+
+```sh
+flutterbug --cloudflare --tunnel --open --story=MyGameFile.z5
+```
+
+
+### How `--open` interacts with tunnels
+
+When `--open` is combined with either tunnel flag, Flutterbug waits for
+the public DNS record to be live before opening the browser. This works
+around a Safari/macOS quirk where the *first* failed DNS lookup gets
+cached as NXDOMAIN, and the page keeps showing "can't find the server"
+even after the tunnel is up. If the tunnel doesn't come up within 30
+seconds, Flutterbug exits with a non-zero status instead of opening
+anything.
+
+
+## Credits
+
+Flutterbug is written by Joel Burton <joel@joelburton.com>.
+
+It is based heavily on the remote-if-demo script by Andrew Plotkin, as well as his
+GlkOte library.

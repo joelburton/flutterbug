@@ -1,0 +1,56 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Python virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python build and packaging artifacts
+build/
+dist/
+*.egg
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Python tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.hypothesis/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+
+# Vim/editor temp files
+*~
+*.swp
+*.swo
+*.swn
+
+# JetBrains IDE project files
+.idea/.gitignore
+.idea/workspace.xml
+.idea/modules.xml
+.idea/vcs.xml
+.idea/*.iml
+.idea/shelf/
+.idea/httpRequests/
+.idea/queries/
+.idea/dataSources/
+.idea/dataSources.local.xml
+.idea/inspectionProfiles/
+
+# macOS Finder metadata
+.DS_Store
+
+# Claude Code local settings
+.claude/
+CLAUDE.md

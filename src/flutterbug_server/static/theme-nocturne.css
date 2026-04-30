@@ -1,0 +1,132 @@
+/*
+ * Nocturne theme.
+ *
+ * This file intentionally customizes the UI almost entirely through CSS
+ * variable overrides. That is the proof that the current theme contract is
+ * broad enough to support alternate looks without selector surgery.
+ *
+ * Sizes are in rem (1rem = 16px baseline) so the layout responds cleanly
+ * to browser font-size preferences and Cmd-+ zoom. See theme-flutterbug.css
+ * for the matching note.
+ */
+
+:root {
+  --fb-font-serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  --fb-color-gameport-bg: #10151c;
+
+  /* Multiplier the in-app A−/A+ stepper writes onto documentElement.
+     The buffer and grid font sizes pick it up via calc(). */
+  --glk-game-font-scale: 1;
+
+  --glk-window-bg: #18212c;
+  --glk-buffer-text-color: #d9e3ee;
+  --glk-buffer-font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  --glk-buffer-font-size: calc(1.1875rem * var(--glk-game-font-scale));
+  --glk-buffer-line-height: 1.52;
+  --glk-buffer-padding: 0.625rem 0.875rem 0.625rem 0.875rem;
+
+  --glk-grid-bg: #111922;
+  --glk-grid-text-color: #c2d2e2;
+  --glk-grid-font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+  --glk-grid-font-size: calc(0.875rem * var(--glk-game-font-scale));
+  --glk-grid-padding: 0.5rem 0.75rem 0.5rem 0.75rem;
+
+  --glk-moreprompt-bg: #8e5d2d;
+  --glk-moreprompt-color: #fff3dc;
+  --glk-moreprompt-opacity: 0.88;
+  --glk-moreprompt-radius: 999px;
+  --glk-previousmark-bg: #4e6a87;
+  --glk-graphics-bg: #18212c;
+  --glk-style-blockquote-bg: #243243;
+  --glk-style-input-color: #ffd28c;
+
+  /* See theme-flutterbug.css for the rationale; Nocturne runs slightly
+     wider to accommodate uppercase letter-spacing on the h3 labels. */
+  --fb-sidebar-width: clamp(14rem, 22vw, 18rem);
+  --fb-sidebar-bg: #0d1218;
+  --fb-sidebar-border: #283848;
+  --fb-sidebar-text: #dbe4ee;
+
+  --fb-brand-gap: 0.625rem;
+  --fb-brand-margin-y: 0.75rem;
+  --fb-brand-margin-x: 1rem;
+  --fb-brand-padding-bottom: 0.625rem;
+  --fb-brand-divider: #243342;
+  --fb-brand-icon-size: 2.125rem;
+  --fb-brand-icon-radius: 999px;
+  --fb-brand-font-size: 1.375rem;
+  --fb-brand-color: #f4d7a1;
+
+  --fb-h3-margin-top: 0.875rem;
+  --fb-h3-margin-x: 1rem;
+  --fb-h3-margin-bottom: 0.5rem;
+  --fb-h3-size: 0.8125rem;
+
+  --fb-room-label-margin-top: 0.75rem;
+  --fb-room-label-margin-x: 1rem;
+  --fb-room-label-size: 0.75rem;
+  --fb-room-label-color: #91a6bc;
+
+  --fb-status-margin-top: 0.5rem;
+  --fb-status-margin-x: 1rem;
+  --fb-status-margin-bottom: 0.375rem;
+  --fb-status-size: 0.75rem;
+  --fb-status-color: #ffbb70;
+  --fb-status-min-height: 1rem;
+
+  --fb-players-margin-x: 1rem;
+  --fb-players-padding-left: 1.125rem;
+  --fb-players-max-height: 7.5rem;
+  --fb-player-fallback-color: #9bb0c5;
+
+  --fb-feed-margin-x: 1rem;
+  --fb-command-margin-bottom: 0.625rem;
+  --fb-chat-margin-bottom: 0.375rem;
+  --fb-feed-padding: 0.625rem;
+  --fb-feed-border: #2a394a;
+  --fb-feed-bg: #121a23;
+
+  --fb-chat-row-margin-bottom: 0.75rem;
+  --fb-chat-row-gap: 0.375rem;
+  --fb-chat-input-font-size: 0.8125rem;
+  --fb-chat-input-padding-y: 0.375rem;
+  --fb-chat-input-padding-x: 0.5rem;
+  --fb-chat-input-color: #e2edf8;
+  --fb-chat-input-placeholder-color: #7f95aa;
+  --fb-chat-input-border: #324559;
+  --fb-chat-input-radius: 0.5rem;
+  --fb-chat-input-bg: #18212c;
+
+  --fb-chat-send-font-size: 0.75rem;
+  --fb-chat-send-padding-y: 0.375rem;
+  --fb-chat-send-padding-x: 0.625rem;
+  --fb-chat-send-color: #fff6e8;
+  --fb-chat-send-border: #8e5d2d;
+  --fb-chat-send-radius: 0.5rem;
+  --fb-chat-send-bg: #6a4727;
+
+  --fb-feed-line-font-size: 0.8125rem;
+  --fb-feed-line-height: 1.42;
+  --fb-feed-line-margin-bottom: 0.375rem;
+
+  --fb-mobile-sidebar-height: 11.875rem;
+  --fb-mobile-players-max-height: 3.5rem;
+  --fb-mobile-feed-height: 3.375rem;
+}
+
+body.theme-nocturne {
+  background: #0a0f14;
+}
+
+body.theme-nocturne #chat-input,
+body.theme-nocturne #chat-send,
+body.theme-nocturne #command-feed,
+body.theme-nocturne #chat-messages {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+body.theme-nocturne #sidebar h3 {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #7f98b1;
+}

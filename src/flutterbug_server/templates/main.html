@@ -1,0 +1,282 @@
+<html>
+<head>
+<title>Flutterbug</title>
+
+<link id="theme-stylesheet" rel="stylesheet" type="text/css">
+
+<style type="text/css">
+body {
+	font-family: var(--fb-font-serif, Georgia, serif);
+	color: var(--glk-buffer-text-color, #333);
+	background-color: var(--fb-color-gameport-bg, #f5f5f5);
+	margin: 24px;
+	max-width: 720px;
+}
+.row {
+	margin: 10px 0;
+}
+label {
+	display: inline-block;
+	min-width: 110px;
+}
+input[type=text] {
+	min-width: 240px;
+	padding: 4px 6px;
+}
+input[type=submit] {
+	background-color: var(--fb-sidebar-bg, #efe6d8);
+	color: var(--fb-sidebar-text, #2a241c);
+	border: 1px solid var(--fb-sidebar-border, #bca98a);
+	padding: 8px 16px;
+	font-family: var(--fb-font-serif, Georgia, serif);
+	font-size: 1em;
+	border-radius: 4px;
+	cursor: pointer;
+	transition: opacity 0.2s;
+}
+input[type=submit]:hover {
+	opacity: 0.8;
+}
+input[type=submit]:active {
+	opacity: 0.6;
+}
+.hint {
+	color: var(--glk-buffer-text-color, #555);
+	opacity: 0.75;
+	font-size: 0.95em;
+}
+.game-card {
+	display: flex;
+	gap: 18px;
+	align-items: flex-start;
+	margin: 22px 0 28px;
+	padding: 14px;
+	border: 1px solid var(--fb-sidebar-border, #bca98a);
+	border-radius: 8px;
+	background: rgba(255, 255, 255, 0.55);
+}
+.game-card img {
+	max-width: 140px;
+	height: auto;
+	border-radius: 4px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+.game-card h2 {
+	margin: 0 0 8px;
+	font-size: 1.3em;
+}
+.game-card p {
+	margin: 0;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Flutterbug</h1>
+
+<p>
+Collaborative interactive fiction player.
+</p>
+
+{% if game_info and (game_info.title or game_info.author or game_info.cover_art_url) %}
+<div class="game-card">
+ {% if game_info.cover_art_url %}
+ <img src="{{ game_info.cover_art_url }}" alt="Cover art for {{ game_info.title or 'this game' }}">
+ {% endif %}
+ <div>
+  {% if game_info.title %}
+  <h2>{{ game_info.title }}</h2>
+  {% endif %}
+	{% if game_info.author %}
+	<p class="hint">By {{ game_info.author }}</p>
+	{% endif %}
+ </div>
+</div>
+{% endif %}
+
+{% if not sessionid %}
+
+<p>
+You are not signed in.
+<form method="post" action="/" id="signin-form">
+ <div class="row">
+  <label for="playername">Your name:</label>
+  <input id="playername" type="text" maxlength="40" autocomplete="name" placeholder="Enter your name">
+ </div>
+ <div class="row hint">This name will be remembered on this browser.</div>
+ {% if password_required %}
+ <div class="row">
+  <label for="password">Password:</label>
+  <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Game password">
+ </div>
+ {% endif %}
+ {% if password_error %}
+ <div class="row hint" style="color:#c0392b">Incorrect password. Try again.</div>
+ {% endif %}
+ <input name="signin" type="submit" value="Sign In">
+</form>
+</p>
+
+{% else %}
+
+<p>
+Your session ID is {{sessionid}}.
+<form method="post" action="/" id="signout-form">
+ <input id="signout-button" name="signout" type="submit" value="Sign Out">
+</form>
+</p>
+
+<p id="current-name" class="hint"></p>
+
+<p>
+<label for="theme-select">Theme:</label>
+<select id="theme-select">
+{% for theme in themes %}
+ <option value="{{theme['key']}}">{{theme['label']}}</option>
+{% endfor %}
+</select>
+</p>
+
+<p>
+<form id="play-form" method="get" action="/play">
+ <input type="hidden" name="name" id="play-name">
+ <input type="hidden" name="theme" id="play-theme">
+ <input type="submit" value="Begin playing the game">
+</form>
+</p>
+
+{% endif %}
+
+<script type="text/javascript">
+(function() {
+	var NAME_KEY = 'remoteif.playername';
+	var THEME_KEY = 'remoteif.theme';
+
+	function loadName() {
+		try {
+			return (localStorage.getItem(NAME_KEY) || '').trim();
+		}
+		catch (ex) {
+			return '';
+		}
+	}
+
+	function saveName(val) {
+		try {
+			localStorage.setItem(NAME_KEY, val);
+		}
+		catch (ex) {
+			/* ignore localStorage failures */
+		}
+	}
+
+	function clearName() {
+		try {
+			localStorage.removeItem(NAME_KEY);
+		}
+		catch (ex) {
+			/* ignore localStorage failures */
+		}
+	}
+
+	function loadTheme() {
+		try {
+			return (localStorage.getItem(THEME_KEY) || 'flutterbug').trim();
+		}
+		catch (ex) {
+			return 'flutterbug';
+		}
+	}
+
+	function saveTheme(val) {
+		try {
+			localStorage.setItem(THEME_KEY, val);
+		}
+		catch (ex) {
+			/* ignore localStorage failures */
+		}
+	}
+
+	function applyTheme(themeName) {
+		var themeLink = document.getElementById('theme-stylesheet');
+		if (themeLink) {
+			themeLink.href = '/static/theme-' + encodeURIComponent(themeName) + '.css';
+		}
+	}
+
+	function updatePlayForm(name, theme) {
+		var playNameInput = document.getElementById('play-name');
+		if (playNameInput) {
+			playNameInput.value = name || '';
+		}
+		var playThemeInput = document.getElementById('play-theme');
+		if (playThemeInput) {
+			playThemeInput.value = theme || 'flutterbug';
+		}
+	}
+
+	var storedName = loadName();
+	var storedTheme = loadTheme();
+	var nameInput = document.getElementById('playername');
+	if (nameInput && storedName) {
+		nameInput.value = storedName;
+	}
+	updatePlayForm(storedName, storedTheme);
+
+	applyTheme(storedTheme);
+
+	var themeSelect = document.getElementById('theme-select');
+	if (themeSelect) {
+		var hasStoredTheme = Array.prototype.some.call(themeSelect.options, function(option) {
+			return option.value === storedTheme;
+		});
+		if (hasStoredTheme)
+			themeSelect.value = storedTheme;
+		else
+			storedTheme = themeSelect.value;
+
+		themeSelect.addEventListener('change', function() {
+			storedTheme = themeSelect.value;
+			saveTheme(storedTheme);
+			applyTheme(storedTheme);
+			updatePlayForm(storedName, storedTheme);
+		});
+	}
+
+	var signinForm = document.getElementById('signin-form');
+	if (signinForm) {
+		signinForm.addEventListener('submit', function(ev) {
+			var nm = '';
+			if (nameInput)
+				nm = nameInput.value.trim();
+			if (!nm) {
+				ev.preventDefault();
+				alert('Please enter your name before signing in.');
+				if (nameInput)
+					nameInput.focus();
+				return;
+			}
+			saveName(nm);
+		});
+	}
+
+	var currentName = document.getElementById('current-name');
+	if (currentName) {
+		if (storedName)
+			currentName.textContent = 'Playing as: ' + storedName;
+		else
+			currentName.textContent = 'No saved name. Sign out and sign in again to enter one.';
+	}
+
+	var signoutButton = document.getElementById('signout-button');
+	if (signoutButton) {
+		signoutButton.addEventListener('click', function() {
+			clearName();
+		});
+	}
+})();
+</script>
+
+</body>
+</html>
