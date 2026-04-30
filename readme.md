@@ -118,6 +118,24 @@ with bigger windows will see empty space around the game.
 flutterbug --mode=fixed --password "super secret" --open --story=FancyGame.gblorb
 ```
 
+### Keeping users signed in across restarts: `--secret`
+
+By default, Flutterbug generates a random session key each time it starts.
+This means that if you restart the server — to update the game file, change
+a setting, or recover from a crash — everyone will need to sign in again.
+
+To avoid this, pass a fixed secret:
+
+```sh
+flutterbug --secret "some long random string" --password "super secret" ...
+```
+
+With a consistent `--secret`, a returning user whose browser still holds a
+valid session cookie is let straight into the game without seeing the sign-in
+page — even if a password is required for new visitors. Pick any long random
+string and keep it the same across invocations. Don't reuse it as your game
+password.
+
 ### Other tunneling options
 
 You can use Cloudflare tunneling rather than Localhost.run. To do so, you'll

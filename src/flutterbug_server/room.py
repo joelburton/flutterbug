@@ -10,6 +10,8 @@ import copy
 import json
 import os.path
 import shlex
+import subprocess
+import sys
 from logging import Logger
 from typing import Any, Awaitable, Callable, Optional, Protocol
 
@@ -68,6 +70,16 @@ async def _default_vm_factory(command: str, cwd: str) -> asyncio.subprocess.Proc
     args = shlex.split(command)
     if not args:
         raise ValueError('Empty --command value.')
+    if sys.platform == 'win32':
+        # On Windows, npm-installed tools like emglken are .cmd files, which
+        # can only be executed through cmd.exe. create_subprocess_shell handles
+        # this; list2cmdline rebuilds the parsed args with Windows-style quoting.
+        return await asyncio.create_subprocess_shell(
+            subprocess.list2cmdline(args),
+            cwd=cwd,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+        )
     return await asyncio.create_subprocess_exec(
         *args,
         cwd=cwd,
@@ -119,8 +131,8 @@ class PersistSession:
 
     async def launch(self) -> None:
         """Start the interpreter subprocess (idempotent across relaunches)."""
-        self.log.info('Launching game for %s', self)
-        self.log.info('Game command: %s', self.command)
+        self.log.debug('Launching game for %s', self)
+        self.log.debug('Game command: %s', self.command)
         self.proc = await self.vm_factory(self.command, self.cwd)
         # A fresh subprocess always means a fresh read buffer; otherwise a
         # prior close() would leave _readbuf=None and gameread() would

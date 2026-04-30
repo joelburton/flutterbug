@@ -7,6 +7,7 @@ import re
 import secrets
 import shlex
 import signal
+import socket
 import subprocess
 import threading
 import time
@@ -58,6 +59,9 @@ def _start_tunnel(
     relays the subprocess's combined stdout/stderr to the log, and
     sets ``url_event`` once ``url_re`` matches a line.
     """
+    log.info(
+        'Launching %s tunnel: %s',
+        provider_name, shlex.join(command))
     try:
         proc = subprocess.Popen(
             command,
@@ -118,7 +122,7 @@ def _start_tunnel(
         for line in proc.stdout:
             line = line.rstrip()
             if line:
-                log.info('[%s] %s', provider_name, line)
+                log.debug('[%s] %s', provider_name, line)
                 last_activity[0] = time.time()
             if url_holder['url'] is None:
                 match = url_re.search(line)
@@ -206,7 +210,7 @@ def _wait_for_tunnel_dns(url: str, log: logging.Logger, timeout: float = 30.0) -
             log.debug('DNS query for %s failed: %r', hostname, ex)
         now = time.time()
         if now - last_logged >= 5.0:
-            log.info('Waiting for DNS to propagate for %s...', hostname)
+            log.debug('Waiting for DNS to propagate for %s...', hostname)
             last_logged = now
         time.sleep(1.0)
     return False
@@ -224,8 +228,31 @@ def _stop_tunnel(proc: subprocess.Popen, name: str, log: logging.Logger):
         proc.kill()
 
 
+_LEVEL_COLORS = {
+    logging.DEBUG:    ('\x1b[32m', 4),        # green,     "DEBUG:    "
+    logging.INFO:     ('\x1b[32m', 5),        # green,     "INFO:     "
+    logging.WARNING:  ('\x1b[33m', 2),        # yellow,    "WARNING:  "
+    logging.ERROR:    ('\x1b[31m', 4),        # red,       "ERROR:    "
+    logging.CRITICAL: ('\x1b[1m\x1b[31m', 1), # bold red, "CRITICAL: "
+}
+_ANSI_RESET = '\x1b[0m'
+
+
+class _ColoredFormatter(logging.Formatter):
+    """Pre-uvicorn log formatter matching uvicorn's colored output style."""
+
+    def format(self, record):
+        import sys
+        use_colors = hasattr(sys.stderr, 'isatty') and sys.stderr.isatty()
+        color, spaces = _LEVEL_COLORS.get(record.levelno, ('', 1))
+        if use_colors:
+            prefix = f"{color}{record.levelname}{_ANSI_RESET}:" + ' ' * spaces
+        else:
+            prefix = f"{record.levelname}:" + ' ' * spaces
+        return prefix + record.getMessage()
+
+
 def main():
-    log = logging.getLogger('uvicorn.error')
     parser = argparse.ArgumentParser(
         description=(
             f'Flutterbug {FLUTTERBUG_VERSION}: '
@@ -237,6 +264,9 @@ def main():
     parser.add_argument(
         '--port', type=int, default=4000,
         help='port number to listen on (default: 4000)')
+    parser.add_argument(
+        '--verbose', action='store_true',
+        help='show tunnel provider output, HTTP access logs, and other diagnostic detail')
     parser.add_argument(
         '--debug', action='store_true',
         help='enable debug logging')
@@ -275,7 +305,10 @@ def main():
         help='expose via cloudflared tunnel instead of localhost.run.')
     parser.add_argument(
         '--secret', default=None,
-        help='secret key for session signing (random per-run if omitted)')
+        help='secret key for signing session cookies. If set, users stay '
+             'signed in across server restarts and won\'t need to re-enter '
+             'the password. If omitted, a random key is used and all '
+             'sessions are invalidated whenever the server restarts.')
     auth_group = parser.add_mutually_exclusive_group(required=True)
     auth_group.add_argument(
         '--password', default=None,
@@ -285,6 +318,17 @@ def main():
         help='allow anyone who reaches the URL to sign in. Only safe on a '
              'trusted local network.')
     args = parser.parse_args()
+
+    # Use a dedicated 'flutterbug' logger with its own handler so --verbose
+    # controls our diagnostic output independently of uvicorn's log level.
+    # propagate=False ensures uvicorn's dictConfig call (which reconfigures
+    # the 'uvicorn.*' hierarchy and root logger) can't affect our output.
+    _handler = logging.StreamHandler()
+    _handler.setFormatter(_ColoredFormatter())
+    log = logging.getLogger('flutterbug')
+    log.addHandler(_handler)
+    log.propagate = False
+    log.setLevel(logging.DEBUG if args.verbose else logging.INFO)
 
     if not args.command and not args.story:
         parser.error('Pass --story PATH and/or --command CMD.')
@@ -309,7 +353,13 @@ def main():
     if args.secret is None:
         args.secret = secrets.token_hex(32)
         log.warning(
-            'No --secret provided; sessions will not persist across restarts.')
+            'No --secret provided; users will need to sign in again if '
+            'the server restarts.')
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as _s:
+        if _s.connect_ex(('127.0.0.1', args.port)) == 0:
+            log.error('Port %d is already in use. Choose a different port with --port.', args.port)
+            raise SystemExit(1)
 
     log.info('Resolved game command: %s', args.command)
 
@@ -367,7 +417,7 @@ def main():
                                 'DNS cache). The URL above is still valid '
                                 'once DNS catches up.', url)
                         return
-                    log.info(
+                    log.debug(
                         'Waiting for tunnel... (%ds elapsed)',
                         int(OPEN_TIMEOUT - max(0, deadline - time.time())))
                 log.error(
@@ -387,6 +437,7 @@ def main():
             host='0.0.0.0',
             port=args.port,
             log_level='debug' if args.debug else 'info',
+            access_log=args.verbose,
         )
     finally:
         if tunnel_proc is not None:

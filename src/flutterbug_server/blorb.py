@@ -79,20 +79,20 @@ def autounpack_blorb_resources(
     that don't ship resources.
     """
     if not story_path:
-        log.info('No --story given; skipping Blorb resource auto-unpack.')
+        log.debug('No --story given; skipping Blorb resource auto-unpack.')
         return
     if not story_path.lower().endswith(BLORB_EXTENSIONS):
-        log.info('Story file is not a Blorb; skipping auto-unpack: %s', story_path)
+        log.debug('Story file is not a Blorb; skipping auto-unpack: %s', story_path)
         return
     if not os.path.isfile(story_path):
-        log.info('Story file does not exist; skipping auto-unpack: %s', story_path)
+        log.debug('Story file does not exist; skipping auto-unpack: %s', story_path)
         return
 
     with open(story_path, 'rb') as fl:
         blob = fl.read()
 
     if len(blob) < 12 or blob[0:4] != b'FORM' or blob[8:12] != b'IFRS':
-        log.info('File is not a valid Blorb FORM/IFRS: %s', story_path)
+        log.debug('File is not a valid Blorb FORM/IFRS: %s', story_path)
         return
 
     chunks: dict[int, tuple[bytes, bytes]] = {}
@@ -114,7 +114,7 @@ def autounpack_blorb_resources(
             ridx_chunk = chunkdata
             break
     if not ridx_chunk or len(ridx_chunk) < 4:
-        log.info('No RIdx chunk in Blorb; skipping auto-unpack: %s', story_path)
+        log.debug('No RIdx chunk in Blorb; skipping auto-unpack: %s', story_path)
         return
 
     count = struct.unpack('>I', ridx_chunk[0:4])[0]
@@ -167,7 +167,7 @@ def autounpack_blorb_resources(
         }
 
     if not res_entries:
-        log.info('No Pict resources found in Blorb: %s', story_path)
+        log.debug('No Pict resources found in Blorb: %s', story_path)
         return
 
     jsonmap_path = os.path.join(resource_dir, 'resourcemap.json')
@@ -192,7 +192,7 @@ def autounpack_blorb_resources(
     ]
     write_if_changed(jsmap_path, b'\n'.join(js_lines))
 
-    log.info('Auto-unpacked %s image resources from %s into %s',
+    log.debug('Auto-unpacked %s image resources from %s into %s',
              len(res_entries), story_path, resource_dir)
     if wrote:
-        log.info('Wrote/updated %s image files.', wrote)
+        log.debug('Wrote/updated %s image files.', wrote)

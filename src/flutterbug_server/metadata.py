@@ -43,7 +43,7 @@ def lookup_story_metadata(story_path: Optional[str], log: Logger) -> Optional[di
     if not title and not author and not cover_art_url:
         return None
 
-    log.info('Loaded story metadata for IFID %s', ifid)
+    log.debug('Loaded story metadata for IFID %s', ifid)
     return {
         'title': title,
         'author': author,
