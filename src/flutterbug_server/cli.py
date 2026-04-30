@@ -241,6 +241,16 @@ def main():
         help='story file path. Without --command, expanded as: emglken PATH --rem. '
              'With --command, used for IFDB metadata + Blorb resource extraction.')
     parser.add_argument(
+        '--mode', choices=('flex', 'fixed'), default='flex',
+        help='flex (default): each player wraps the buffer at their own viewport '
+             'width and the VM is locked to a fixed status-bar column count. '
+             'fixed: VM follows whoever last resized; classic shared behavior.')
+    parser.add_argument(
+        '--status-cols', type=int, default=60, metavar='N',
+        help='in flex mode, the column width the VM uses for grid (status) '
+             'windows (default 60). Wider hosts will see blank space to the '
+             'right of the status bar; narrower viewers may clip.')
+    parser.add_argument(
         '--gidebug', action='store_true',
         help='activate the GlkOte debug console')
     parser.add_argument(
@@ -275,6 +285,9 @@ def main():
 
     if not args.command and not args.story:
         parser.error('Pass --story PATH and/or --command CMD.')
+
+    if args.status_cols < 1:
+        parser.error('--status-cols must be a positive integer.')
 
     if args.no_password:
         log.warning(

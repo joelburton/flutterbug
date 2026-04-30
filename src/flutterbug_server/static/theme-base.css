@@ -10,6 +10,65 @@ body {
   height: 100%;
 }
 
+/*
+ * In flex mode the VM's view of the gameport is locked to the host's
+ * first init (with width = status_cols * gridcharwidth). GlkOte's normal
+ * layout positions each WindowFrame absolutely using the VM-reported
+ * pixel rect, which on any client whose viewport or font differs from
+ * the host's leaves the buffer mis-sized and the status bar's height
+ * frozen — when a player scales their grid font up, a multi-line status
+ * bar's second row gets clipped by the still-host-sized div.
+ *
+ * Replace that with a flex column on the windowport so each WindowFrame
+ * sizes itself: grids take their natural content height (which scales
+ * with the player's chosen font size), the buffer takes the remaining
+ * space, and the browser re-wraps buffer text at the actual viewport
+ * width. Assumes windows appear in the GlkOte windows array in
+ * top-to-bottom visual order, which holds for the "grid above buffer"
+ * layout that classic IF games use. Fancy layouts (multiple buffers,
+ * side-by-side splits) should run in --mode=fixed instead.
+ */
+body.mode-flex #windowport {
+  display: flex;
+  flex-direction: column;
+}
+
+body.mode-flex .WindowFrame {
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: auto !important;
+}
+
+/* Force visual order regardless of how the VM enumerates windows. In
+   classic Infocom-style games the buffer is created first and the
+   status grid is split off later, so windows arrive in [buffer, grid]
+   DOM order — the legacy absolute-positioning layout didn't care, but
+   a flex column would put the buffer on top. ``order`` overrides that:
+   grids float to the top, buffers fill the middle, graphics windows
+   go last. Multiple grids/buffers keep their relative DOM order. */
+body.mode-flex .GridWindow {
+  flex: 0 0 auto;
+  height: auto !important;
+  order: 0;
+}
+
+body.mode-flex .BufferWindow {
+  flex: 1 1 auto;
+  height: auto !important;
+  /* min-height: 0 lets the flex child shrink below its scrollable
+     content size so its own overflow:scroll keeps working. */
+  min-height: 0;
+  order: 1;
+}
+
+body.mode-flex .GraphicsWindow {
+  flex: 0 0 auto;
+  order: 2;
+}
+
 #gameport {
   position: absolute;
   overflow: hidden;

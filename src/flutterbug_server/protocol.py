@@ -34,6 +34,14 @@ SNAPSHOT_REPLAY_EVENTS: Final = (EVT_INIT, EVT_REFRESH)
 # specialresponse subtypes.
 SPECIAL_FILEREF_PROMPT: Final = 'fileref_prompt'
 
+# Display modes selecting how player viewports interact with the VM's
+# notion of window sizes. ``flex`` lets each player wrap the buffer
+# at their own width while the VM is locked to a fixed grid column
+# count; ``fixed`` is the legacy behavior where every arrange event
+# reaches the VM and grid pixel sizes are shared verbatim.
+MODE_FLEX: Final = 'flex'
+MODE_FIXED: Final = 'fixed'
+
 # Flutterbug "multiplayer" envelope (server -> client).
 MP_KEY: Final = 'multiplayer'
 MP_CHAT: Final = 'chat'

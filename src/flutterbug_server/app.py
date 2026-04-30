@@ -94,6 +94,8 @@ def create_app(settings) -> FastAPI:
             resource_dir=resource_dir,
             resource_url_prefix=resource_url_prefix,
             vm_factory=getattr(settings, 'vm_factory', None),
+            mode=getattr(settings, 'mode', 'flex'),
+            status_cols=getattr(settings, 'status_cols', 60),
         )
         autounpack_blorb_resources(settings.story_path, resource_dir, log)
         try:
@@ -196,6 +198,7 @@ def create_app(settings) -> FastAPI:
             'themename': themename,
             'theme_css': AVAILABLE_THEMES[themename],
             'asset_version': asset_version,
+            'mode': getattr(settings, 'mode', 'flex'),
         })
         return HTMLResponse(html)
 

@@ -14,11 +14,15 @@ from logging import Logger
 from typing import Any, Awaitable, Callable, Optional, Protocol
 
 from .protocol import (
+    EVT_ARRANGE,
     EVT_CHAT,
+    EVT_INIT,
     EVT_LINE,
     EVT_SPECIALRESPONSE,
     EVT_TYPING,
     LAYOUT_EVENTS,
+    MODE_FIXED,
+    MODE_FLEX,
     MP_CHAT,
     MP_COMMAND,
     MP_ERROR,
@@ -229,11 +233,17 @@ class SharedRoom(PersistSession):
         resource_dir: Optional[str] = None,
         resource_url_prefix: str = '/static/resource',
         vm_factory: Optional[Callable[[str, str], Awaitable[VMProcess]]] = None,
+        mode: str = MODE_FLEX,
+        status_cols: int = 60,
     ) -> None:
         super().__init__(command, log, cwd, vm_factory=vm_factory)
+        if mode not in (MODE_FLEX, MODE_FIXED):
+            raise ValueError(f'Unknown mode: {mode!r}')
         self.jsondebug = jsondebug
         self.resource_dir = resource_dir
         self.resource_url_prefix = resource_url_prefix.rstrip('/')
+        self.mode = mode
+        self.status_cols = status_cols
         self.clients: dict[int, dict] = {}
         self.next_clientid = 1
         self.next_color_index = 0
@@ -481,12 +491,29 @@ class SharedRoom(PersistSession):
             return
 
         # Late joiners must sync from snapshot. Forwarding their init/refresh
-        # would reset the shared VM. ``arrange`` is *not* intercepted: it's
-        # a regular mid-session resize event that must reach the VM so window
-        # pixel sizes follow new char metrics (Cmd-+, in-app font stepper).
+        # would reset the shared VM. In fixed mode ``arrange`` is *not*
+        # intercepted: it's a regular mid-session resize event that must
+        # reach the VM so window pixel sizes follow new char metrics
+        # (Cmd-+, in-app font stepper). In flex mode the VM's notion of
+        # window sizes is locked at the host's first init, so we drop
+        # every subsequent arrange — the host's local CSS still re-renders
+        # using their own metrics, and other players are unaffected.
         if evtype in SNAPSHOT_REPLAY_EVENTS and self.snapshot.has_output:
             await self.send_snapshot_to_client(clientid)
             return
+        if (self.mode == MODE_FLEX
+                and evtype == EVT_ARRANGE
+                and self.snapshot.has_output):
+            return
+
+        # In flex mode, the very first init that reaches the VM also locks
+        # the VM's gameport width to status_cols character cells. The VM
+        # never learns the host's actual viewport width, so its layout is
+        # stable for all later joiners regardless of who has what screen.
+        if (self.mode == MODE_FLEX
+                and evtype == EVT_INIT
+                and not self.snapshot.has_output):
+            msg = self._rewrite_init_metrics_for_flex(obj, msg)
 
         if not await self._allow_through_gen_check(clientid, obj):
             return
@@ -494,6 +521,22 @@ class SharedRoom(PersistSession):
         await self.input_queue.put((clientid, msg.encode('utf-8'), obj))
         if self.queue_task is None or self.queue_task.done():
             self.queue_task = asyncio.create_task(self.process_queue())
+
+    def _rewrite_init_metrics_for_flex(self, obj: JsonDict, msg: str) -> str:
+        """Pin metrics.width to ``status_cols`` cells for the host's first init.
+
+        Mutates ``obj`` in place and returns a re-serialized payload. If the
+        metrics block is missing or malformed we leave it alone — the VM will
+        report its own error and the room is no worse off than today.
+        """
+        metrics = obj.get('metrics')
+        if not isinstance(metrics, dict):
+            return msg
+        cellwidth = metrics.get('gridcharwidth')
+        if not isinstance(cellwidth, (int, float)) or cellwidth <= 0:
+            return msg
+        metrics['width'] = self.status_cols * cellwidth
+        return json.dumps(obj)
 
     async def _handle_chat(self, clientid: int, obj: JsonDict) -> None:
         text = str(obj.get('text', '')).strip()

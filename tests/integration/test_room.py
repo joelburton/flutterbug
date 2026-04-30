@@ -7,6 +7,9 @@ the room's queue task, and inspect what each socket received.
 
 import asyncio
 import json
+import logging
+
+from flutterbug_server.room import SharedRoom
 
 from .conftest import (
     connect,
@@ -20,6 +23,33 @@ from .conftest import (
 def arrange_msg(gen: int = 0, width: int = 1000, height: int = 700) -> str:
     return json.dumps({'type': 'arrange', 'gen': gen,
                        'metrics': {'width': width, 'height': height}})
+
+
+def init_msg_with_metrics(gen: int = 0, width: int = 800,
+                          height: int = 600,
+                          gridcharwidth: float = 10.0) -> str:
+    """Like ``init_msg`` but exposes gridcharwidth so flex-mode tests can
+    assert against the rewritten width = status_cols * gridcharwidth."""
+    return json.dumps({
+        'type': 'init', 'gen': gen,
+        'metrics': {
+            'width': width,
+            'height': height,
+            'gridcharwidth': gridcharwidth,
+        },
+    })
+
+
+def _make_room(factory, mode: str, status_cols: int = 60) -> SharedRoom:
+    return SharedRoom(
+        command='fake',
+        log=logging.getLogger('flutterbug.test'),
+        cwd='/tmp',
+        jsondebug=False,
+        vm_factory=factory,
+        mode=mode,
+        status_cols=status_cols,
+    )
 
 
 # --------------------------------------------------------------------
@@ -57,10 +87,11 @@ async def test_second_client_resyncs_from_snapshot_no_new_vm_init(room, factory)
     assert any(m.get('type') == 'update' for m in sock_b.messages)
 
 
-async def test_arrange_from_established_client_reaches_vm(room, factory):
-    """Mid-session resize / font scale change must reach the VM so it can
-    re-emit window pixel sizes for the new char metrics. Otherwise window
-    frames stay frozen and content (e.g. multi-line status bars) clips."""
+async def test_fixed_mode_arrange_from_established_client_reaches_vm(factory):
+    """In fixed mode, mid-session resize / font scale change must reach the
+    VM so it can re-emit window pixel sizes for the new char metrics.
+    Otherwise window frames stay frozen and content clips."""
+    room = _make_room(factory, mode='fixed')
     a, sock_a = connect(room, 'A')
     await room.handle_client_message(a, init_msg(0))
     await drain(room)
@@ -76,6 +107,79 @@ async def test_arrange_from_established_client_reaches_vm(room, factory):
     )
     # And the VM's response (a fresh update) is broadcast back.
     assert any(m.get('type') == 'update' for m in sock_a.messages)
+
+
+# --------------------------------------------------------------------
+# Flex mode: VM is locked at the host's first init. After that, every
+# arrange (host font stepper, browser resize, late joiner) is dropped.
+# --------------------------------------------------------------------
+
+async def test_flex_mode_first_init_rewrites_width_to_status_cols(factory):
+    room = _make_room(factory, mode='flex', status_cols=60)
+    a, _ = connect(room, 'A')
+
+    await room.handle_client_message(
+        a, init_msg_with_metrics(gen=0, width=1600, gridcharwidth=10.0))
+    await drain(room)
+
+    init_seen = next(
+        inp for inp in factory.instances[0].inputs if inp['type'] == 'init')
+    # 60 cols * 10px = 600. Host's actual 1600 is replaced.
+    assert init_seen['metrics']['width'] == 600
+    # Other metric fields are preserved.
+    assert init_seen['metrics']['height'] == 600
+    assert init_seen['metrics']['gridcharwidth'] == 10.0
+
+
+async def test_flex_mode_first_init_without_gridcharwidth_passes_through(factory):
+    """If the metrics block lacks gridcharwidth (older client, malformed
+    payload), we leave width alone rather than crash. The VM will report
+    its own complaint if it cares."""
+    room = _make_room(factory, mode='flex', status_cols=60)
+    a, _ = connect(room, 'A')
+
+    await room.handle_client_message(a, init_msg(0))
+    await drain(room)
+
+    init_seen = next(
+        inp for inp in factory.instances[0].inputs if inp['type'] == 'init')
+    # width unchanged from init_msg's default of 800.
+    assert init_seen['metrics']['width'] == 800
+
+
+async def test_flex_mode_drops_arrange_after_first_init(factory):
+    room = _make_room(factory, mode='flex', status_cols=60)
+    a, _ = connect(room, 'A')
+    await room.handle_client_message(
+        a, init_msg_with_metrics(gen=0, gridcharwidth=10.0))
+    await drain(room)
+    inputs_before = list(factory.instances[0].inputs)
+
+    await room.handle_client_message(a, arrange_msg(gen=1))
+    await drain(room)
+
+    new_inputs = factory.instances[0].inputs[len(inputs_before):]
+    assert not any(inp['type'] == 'arrange' for inp in new_inputs), (
+        f'arrange leaked to VM in flex mode; new inputs were {new_inputs}'
+    )
+
+
+async def test_flex_mode_drops_arrange_from_late_joiner(factory):
+    """A second client whose viewport differs from the host must not be
+    able to perturb the VM's locked metrics by sending its own arrange."""
+    room = _make_room(factory, mode='flex', status_cols=60)
+    a, _ = connect(room, 'A')
+    await room.handle_client_message(
+        a, init_msg_with_metrics(gen=0, gridcharwidth=10.0))
+    await drain(room)
+
+    b, _ = connect(room, 'B')
+    inputs_before = list(factory.instances[0].inputs)
+    await room.handle_client_message(b, arrange_msg(gen=1))
+    await drain(room)
+
+    new_inputs = factory.instances[0].inputs[len(inputs_before):]
+    assert not any(inp['type'] == 'arrange' for inp in new_inputs)
 
 
 async def test_simultaneous_inits_do_not_double_init_vm(room, factory):
