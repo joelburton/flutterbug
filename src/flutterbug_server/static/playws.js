@@ -266,7 +266,7 @@ $(document).ready(function() {
             send_chat();
         } else if (ev.key === 'Escape') {
             focus_game_input();
-        } else {
+        } else if (ev.key !== 'Backspace' && ev.key !== 'Delete') {
             send_typing('chat');
         }
     });
@@ -278,7 +278,7 @@ $(document).ready(function() {
         if (slash_chat_enabled && ev.key === '/' && $(this).val() === '') {
             ev.preventDefault();
             $('#chat-input').focus();
-        } else if (ev.key !== 'Enter') {
+        } else if (ev.key !== 'Enter' && ev.key !== 'Backspace' && ev.key !== 'Delete') {
             send_typing('command');
         }
     });
