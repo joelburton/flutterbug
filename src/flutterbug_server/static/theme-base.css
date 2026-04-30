@@ -1,0 +1,220 @@
+/*
+ * Shared play-page shell styles.
+ *
+ * This file defines the structural sidebar/gameport layout and reads only from
+ * the --fb-* variables supplied by the selected theme stylesheet.
+ */
+
+body {
+  margin: 0px;
+  height: 100%;
+}
+
+#gameport {
+  position: absolute;
+  overflow: hidden;
+  right: var(--fb-sidebar-width);
+  left: 0px;
+  height: 100%;
+  background: var(--fb-color-gameport-bg);
+  margin: 0px;
+}
+
+#sidebar {
+  position: absolute;
+  right: 0px;
+  top: 0px;
+  bottom: 0px;
+  width: var(--fb-sidebar-width);
+  background: var(--fb-sidebar-bg);
+  border-left: 1px solid var(--fb-sidebar-border);
+  font-family: var(--fb-font-serif);
+  color: var(--fb-sidebar-text);
+  display: flex;
+  flex-direction: column;
+}
+
+#brand {
+  display: flex;
+  align-items: center;
+  gap: var(--fb-brand-gap);
+  margin: var(--fb-brand-margin-y) var(--fb-brand-margin-x) 0px var(--fb-brand-margin-x);
+  padding-bottom: var(--fb-brand-padding-bottom);
+  border-bottom: 1px solid var(--fb-brand-divider);
+}
+
+#brand img {
+  width: var(--fb-brand-icon-size);
+  height: var(--fb-brand-icon-size);
+  border-radius: var(--fb-brand-icon-radius);
+}
+
+#brand-name {
+  font-size: var(--fb-brand-font-size);
+  line-height: 1;
+  font-weight: bold;
+  color: var(--fb-brand-color);
+}
+
+#sidebar h3 {
+  margin: var(--fb-h3-margin-top) var(--fb-h3-margin-x) var(--fb-h3-margin-bottom) var(--fb-h3-margin-x);
+  font-size: var(--fb-h3-size);
+}
+
+#room-label {
+  margin: var(--fb-room-label-margin-top) var(--fb-room-label-margin-x) 0px var(--fb-room-label-margin-x);
+  font-size: var(--fb-room-label-size);
+  color: var(--fb-room-label-color);
+}
+
+#shared-status {
+  margin: var(--fb-status-margin-top) var(--fb-status-margin-x) var(--fb-status-margin-bottom) var(--fb-status-margin-x);
+  font-size: var(--fb-status-size);
+  color: var(--fb-status-color);
+  font-style: italic;
+  min-height: var(--fb-status-min-height);
+  display: none;
+}
+
+#players-list {
+  margin: 0px var(--fb-players-margin-x);
+  padding-left: var(--fb-players-padding-left);
+  max-height: var(--fb-players-max-height);
+  overflow-y: auto;
+}
+
+#players-list li {
+  color: var(--player-color, var(--fb-player-fallback-color));
+}
+
+#command-feed {
+  margin: 0px var(--fb-feed-margin-x) var(--fb-command-margin-bottom) var(--fb-feed-margin-x);
+  padding: var(--fb-feed-padding);
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  border: 1px solid var(--fb-feed-border);
+  background: var(--fb-feed-bg);
+}
+
+#chat-messages {
+  margin: 0px var(--fb-feed-margin-x) var(--fb-chat-margin-bottom) var(--fb-feed-margin-x);
+  padding: var(--fb-feed-padding);
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  border: 1px solid var(--fb-feed-border);
+  background: var(--fb-feed-bg);
+}
+
+#chat-input-row {
+  display: flex;
+  margin: 0px var(--fb-feed-margin-x) var(--fb-chat-row-margin-bottom) var(--fb-feed-margin-x);
+  gap: var(--fb-chat-row-gap);
+}
+
+#slash-chat-option {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  margin: 0 var(--fb-feed-margin-x) var(--fb-chat-row-margin-bottom) var(--fb-feed-margin-x);
+  font-size: 0.75em;
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+#slash-chat-option kbd {
+  font-family: var(--fb-font-mono, monospace);
+  font-size: 0.95em;
+  padding: 0 0.3em;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+}
+
+#font-size-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0 var(--fb-feed-margin-x) var(--fb-chat-row-margin-bottom) var(--fb-feed-margin-x);
+  font-size: 0.75em;
+  opacity: 0.7;
+}
+
+#font-size-controls .font-size-buttons {
+  display: flex;
+  gap: 0.25rem;
+}
+
+#font-size-controls button {
+  flex: 1;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--fb-chat-send-font-size);
+  padding: var(--fb-chat-send-padding-y) var(--fb-chat-send-padding-x);
+  color: var(--fb-chat-send-color);
+  border: 1px solid var(--fb-chat-send-border);
+  border-radius: var(--fb-chat-send-radius);
+  background: var(--fb-chat-send-bg);
+}
+
+#chat-input {
+  flex: 1;
+  font-size: var(--fb-chat-input-font-size);
+  font-family: var(--fb-font-serif);
+  color: var(--fb-chat-input-color);
+  padding: var(--fb-chat-input-padding-y) var(--fb-chat-input-padding-x);
+  border: 1px solid var(--fb-chat-input-border);
+  border-radius: var(--fb-chat-input-radius);
+  background: var(--fb-chat-input-bg);
+}
+
+#chat-input::placeholder {
+  color: var(--fb-chat-input-placeholder-color);
+}
+
+#chat-send {
+  font-size: var(--fb-chat-send-font-size);
+  color: var(--fb-chat-send-color);
+  padding: var(--fb-chat-send-padding-y) var(--fb-chat-send-padding-x);
+  border: 1px solid var(--fb-chat-send-border);
+  border-radius: var(--fb-chat-send-radius);
+  background: var(--fb-chat-send-bg);
+  cursor: pointer;
+}
+
+.feed-line {
+  font-size: var(--fb-feed-line-font-size);
+  line-height: var(--fb-feed-line-height);
+  margin-bottom: var(--fb-feed-line-margin-bottom);
+  word-break: break-word;
+}
+
+.feed-line .chat-author {
+  color: var(--player-color, var(--fb-player-fallback-color));
+}
+
+@media screen and (max-width: 660px) {
+  #gameport {
+    right: 0px;
+    bottom: var(--fb-mobile-sidebar-height);
+  }
+
+  #sidebar {
+    left: 0px;
+    width: auto;
+    height: var(--fb-mobile-sidebar-height);
+    top: auto;
+    border-left: 0px;
+    border-top: 1px solid var(--fb-sidebar-border);
+  }
+
+  #players-list {
+    max-height: var(--fb-mobile-players-max-height);
+  }
+
+  #command-feed,
+  #chat-messages {
+    flex: 0 0 auto;
+    height: var(--fb-mobile-feed-height);
+  }
+}
