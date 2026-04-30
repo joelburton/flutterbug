@@ -85,6 +85,19 @@ function callback_websocket_message(ev) {
     GlkOte.update(obj);
     if (chat_was_focused)
         document.getElementById('chat-input').focus();
+    suppress_harmless_glkote_errors();
+}
+
+/* GlkOte surfaces some interpreter quirks as fatal red-box errors that are
+   not actually fatal (e.g. content arriving for a window that is mid-save).
+   Suppress the ones we know are harmless so players never see them. */
+function suppress_harmless_glkote_errors() {
+    var pane = document.getElementById('errorpane');
+    var content = document.getElementById('errorcontent');
+    if (!pane || !content || pane.style.display === 'none') return;
+    var msg = content.textContent || '';
+    if (msg.indexOf('awaiting line input') !== -1)
+        pane.style.display = 'none';
 }
 
 function update_player_list(players) {
