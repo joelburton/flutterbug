@@ -16,7 +16,7 @@ from typing import Annotated, Optional
 from urllib.parse import urlparse
 
 from fastapi import FastAPI, Form, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, JSONResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from starlette.middleware.sessions import SessionMiddleware
@@ -147,6 +147,18 @@ def create_app(settings) -> FastAPI:
 
     app.mount(resource_url_prefix, StaticFiles(directory=resource_dir), name='resource')
     app.mount('/static', StaticFiles(directory=static_dir), name='static')
+
+    @app.get('/favicon.ico', include_in_schema=False)
+    async def favicon():
+        return FileResponse(os.path.join(static_dir, 'favicon.ico'))
+
+    @app.get('/apple-touch-icon.png', include_in_schema=False)
+    async def apple_touch_icon():
+        return FileResponse(os.path.join(static_dir, 'apple-touch-icon.png'))
+
+    @app.get('/apple-touch-icon-precomposed.png', include_in_schema=False)
+    async def apple_touch_icon_precomposed():
+        return FileResponse(os.path.join(static_dir, 'apple-touch-icon-precomposed.png'))
 
     @app.get('/')
     async def main_get(request: Request):
