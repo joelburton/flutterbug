@@ -53,5 +53,4 @@ cd /d "%~dp1"
 
 :wait_and_exit
 echo.
-echo Press any key to close this window...
-pause >nul
+set /p "DUMMY=Press ENTER to close this window: "

@@ -59,5 +59,4 @@ echo flutterbug-solo / flutterbug-tunnel / flutterbug-cloudflare batch files.
 
 :wait_and_exit
 echo.
-echo Press any key to close this window...
-pause >nul
+set /p "DUMMY=Press ENTER to close this window: "
