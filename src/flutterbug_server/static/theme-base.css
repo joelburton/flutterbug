@@ -98,6 +98,22 @@ body.mode-fixed #gameport {
   outline-offset: -1px;
 }
 
+/* The vendored dialog.css positions #dialog_screen and #dialog_frame
+   absolutely with width/height 100% but no top/left, so they fall back
+   to static position. In flex mode #windowport is display:flex, and
+   different Chromium builds resolve the static position of an absolute
+   flex child differently — Windows Chrome anchors it to a flex line
+   rather than the windowport's top-left, which renders the save/restore
+   overlay only over the status grid (and the dialog box off-screen).
+   Pin the overlay to top-left so neither mode depends on auto static
+   positioning, and bump z-index so it always paints above WindowFrames. */
+#dialog_screen,
+#dialog_frame {
+  top: 0;
+  left: 0;
+  z-index: 100;
+}
+
 #sidebar {
   position: absolute;
   right: 0px;
