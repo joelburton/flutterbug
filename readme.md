@@ -21,24 +21,27 @@ It can play:
 
 You may have these already; if not, you can get both from your OS package system.
 
-- **MacOS**: `brew install node python uv`
+- **MacOS**: `brew install node python`
 - **Linux**: use the installer for your distro
-- **Windows**: `winget install OpenJS.NodeJS.LTS Python.Python.3.12 astral-sh.uv`
+- **Windows**: `winget install OpenJS.NodeJS.LTS Python.Python.3.12`
 
 (closing your terminal window and re-opening may be required after you do this)
 
 ## Installing
 
-This installs "emglken", which comes with a bunch of IF virtual machines:
+This installs "emglken", which comes with a bunch of IF virtual machines.
+Pin to 0.6.0 — the latest 0.7+ releases have a Windows bug that prevents
+the interpreter from launching:
 
 ```sh
-npm install -g emglken
+npm install -g emglken@0.6.0
 ```
 
-Install Flutterbug:
+Install Flutterbug. The `@v0.94` pins to a known release; bump it when a
+newer tag is available on GitHub:
 
 ```sh
-uv tool install git+https://github.com/joelburton/flutterbug.git
+pip install --user git+https://github.com/joelburton/flutterbug.git@v0.94
 ```
 
 (when this hits version 1.0, I'll add it to PyPi so this is easier to install)

@@ -1,4 +1,4 @@
 """Flutterbug package."""
 
 __all__ = ["__version__"]
-__version__ = "0.93"
+__version__ = "0.94"
