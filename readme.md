@@ -13,6 +13,18 @@ It can play:
 - Hugo
 - Scare
 
+## On Windows? Start here
+
+Grab the **flutterbug-windows.zip** from the
+[latest release](https://github.com/joelburton/flutterbug/releases/latest)
+and follow the included `readme.txt` (also viewable in
+[`windows/readme.txt`](windows/readme.txt)). It walks you through Python
++ Node.js + a one-click install batch file, and gives you drag-and-drop
+launchers for solo and friends-online play.
+
+The rest of this file is for people who want to develop on Flutterbug,
+are running into trouble the Windows quick-start didn't cover, or just
+want to learn more about how it works.
 
 ## Requirements
 

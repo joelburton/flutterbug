@@ -1,6 +1,16 @@
 Flutterbug for Windows
 ======================
 
+If you're reading this on GitHub, the easy path is to download
+flutterbug-windows.zip from the latest release page:
+
+  https://github.com/joelburton/flutterbug/releases/latest
+
+The zip contains this readme plus four ready-to-run batch files
+(flutterbug-install, flutterbug-solo, flutterbug-tunnel,
+flutterbug-cloudflare). Extract the zip somewhere convenient
+(your desktop is fine) and follow the steps below.
+
 Quick start
 -----------
 
