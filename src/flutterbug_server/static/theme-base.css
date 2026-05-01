@@ -153,6 +153,30 @@ body.mode-fixed #gameport {
 #sidebar h3 {
   margin: var(--fb-h3-margin-top) var(--fb-h3-margin-x) var(--fb-h3-margin-bottom) var(--fb-h3-margin-x);
   font-size: var(--fb-h3-size);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5em;
+}
+
+/* Tiny "save to file" button next to each feed heading. Sized in em so it
+   tracks the h3's font-size; uses currentColor so each theme picks it up. */
+.feed-download {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  font-size: 1.15em;
+  line-height: 1;
+  color: inherit;
+  opacity: 0.55;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.feed-download:hover,
+.feed-download:focus-visible {
+  opacity: 1;
 }
 
 
@@ -181,6 +205,17 @@ body.mode-fixed #gameport {
   text-decoration-thickness: 2px;
   text-underline-offset: 4px;
 }
+
+/* Player slot -> theme variable. The server only assigns a slot number;
+   each theme owns the actual hex via --fb-player-color-N. */
+.player-color-1 { --player-color: var(--fb-player-color-1); }
+.player-color-2 { --player-color: var(--fb-player-color-2); }
+.player-color-3 { --player-color: var(--fb-player-color-3); }
+.player-color-4 { --player-color: var(--fb-player-color-4); }
+.player-color-5 { --player-color: var(--fb-player-color-5); }
+.player-color-6 { --player-color: var(--fb-player-color-6); }
+.player-color-7 { --player-color: var(--fb-player-color-7); }
+.player-color-8 { --player-color: var(--fb-player-color-8); }
 
 #players-list span.me::before {
   content: "★ ";

@@ -73,6 +73,20 @@
   --fb-players-margin-x: 1rem;
   --fb-player-fallback-color: #9bb0c5;
 
+  /* Player label colors. Hand-picked to be perceptually distinct AND
+     legible on the near-black sidebar/feed backgrounds (--fb-sidebar-bg
+     #0d1218, --fb-feed-bg #121a23). Light and saturated — pastels read
+     better against very dark backgrounds than the deep hues that work
+     for the light theme. */
+  --fb-player-color-1: #ff8a7a; /* coral */
+  --fb-player-color-2: #82b9ff; /* sky blue */
+  --fb-player-color-3: #7ed8a4; /* mint green */
+  --fb-player-color-4: #c89cf0; /* lavender */
+  --fb-player-color-5: #f4c177; /* amber */
+  --fb-player-color-6: #7be3e8; /* cyan */
+  --fb-player-color-7: #f292c0; /* pink */
+  --fb-player-color-8: #b4bcc6; /* light grey */
+
   --fb-feed-margin-x: 1rem;
   --fb-command-margin-bottom: 0.625rem;
   --fb-chat-margin-bottom: 0.375rem;

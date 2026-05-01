@@ -297,6 +297,104 @@ async def test_fixed_mode_host_identity_persists_across_refresh(factory):
     assert arranges[0]['metrics']['height'] == 800
 
 
+async def test_host_sessionid_persists_after_vm_close(factory):
+    """If the host disconnects long enough that the VM tears down and a
+    different player is the first to reconnect, the friend's init bootstraps
+    a new VM but does NOT promote them to host. The original host's
+    sessionid is sticky for the room's lifetime."""
+    room = _make_room(factory, mode='fixed')
+    room.CLOSE_DELAY = 0  # tear down immediately when last client leaves
+
+    a, _ = connect(room, 'A')
+    await room.handle_client_message(a, init_msg(0))
+    await drain(room)
+    assert room.host_sessionid == 'sess-A'
+
+    # Host walks away; nobody is connected. VM tears down.
+    room.remove_client(a)
+    await asyncio.sleep(0.01)
+    assert room.proc is None
+    # host_sessionid survives the close.
+    assert room.host_sessionid == 'sess-A'
+
+    # Friend (different sessionid) is the first to reconnect.
+    b, _ = connect(room, 'B')
+    await room.handle_client_message(b, init_msg(0))
+    await drain(room)
+
+    # A new VM was launched (friend's init bootstrapped it) — but the host
+    # role was not handed over to the friend.
+    assert len(factory.instances) == 2
+    assert room.host_sessionid == 'sess-A'
+
+
+async def test_friend_who_relaunched_vm_is_treated_as_non_host(factory):
+    """Follow-up to the previous test: the friend who happened to bootstrap
+    the relaunched VM sends an arrange. Because they are not the host,
+    their metrics must be substituted with locked_metrics rather than
+    forwarded unchanged."""
+    room = _make_room(factory, mode='fixed')
+    room.CLOSE_DELAY = 0
+
+    a, _ = connect(room, 'A')
+    await room.handle_client_message(a, init_msg(0))
+    await drain(room)
+
+    room.remove_client(a)
+    await asyncio.sleep(0.01)
+    assert room.proc is None
+
+    b, _ = connect(room, 'B')
+    await room.handle_client_message(b, init_msg(0))
+    await drain(room)
+    inputs_before = list(factory.instances[1].inputs)
+
+    await room.handle_client_message(
+        b, arrange_msg(gen=2, width=400, height=300))
+    await drain(room)
+
+    new_inputs = factory.instances[1].inputs[len(inputs_before):]
+    arranges = [inp for inp in new_inputs if inp['type'] == 'arrange']
+    assert len(arranges) == 1
+    # Substituted with locked_metrics (seeded by B's init at 800x600 since
+    # there's no host present to seed, but the point is B's 400x300 was
+    # NOT forwarded as a host arrange would be).
+    assert arranges[0]['metrics']['width'] == 800
+    assert arranges[0]['metrics']['height'] == 600
+
+
+async def test_host_reclaims_role_when_returning_after_friend_relaunch(factory):
+    """After a friend bootstraps a relaunched VM, the original host
+    eventually returns. Their arranges must still be recognized as host
+    arranges and forwarded unchanged."""
+    room = _make_room(factory, mode='fixed')
+    room.CLOSE_DELAY = 0
+
+    a1, _ = connect(room, 'A')
+    await room.handle_client_message(a1, init_msg(0))
+    await drain(room)
+    room.remove_client(a1)
+    await asyncio.sleep(0.01)
+
+    b, _ = connect(room, 'B')
+    await room.handle_client_message(b, init_msg(0))
+    await drain(room)
+
+    # Host comes back (same sessionid since 'connect' derives it from name).
+    a2, _ = connect(room, 'A')
+    inputs_before = list(factory.instances[1].inputs)
+    await room.handle_client_message(
+        a2, arrange_msg(gen=2, width=1200, height=800))
+    await drain(room)
+
+    new_inputs = factory.instances[1].inputs[len(inputs_before):]
+    arranges = [inp for inp in new_inputs if inp['type'] == 'arrange']
+    assert len(arranges) == 1
+    # Forwarded unchanged — host role was preserved across the VM teardown.
+    assert arranges[0]['metrics']['width'] == 1200
+    assert arranges[0]['metrics']['height'] == 800
+
+
 # --------------------------------------------------------------------
 # Flex mode: VM is locked at the host's first init. Subsequent arranges
 # from any client still reach the VM but with their metrics replaced by
@@ -773,7 +871,7 @@ async def test_broadcast_continues_when_one_socket_raises(room):
 
     # broadcast must not raise even though B blows up.
     await room.broadcast({'multiplayer': 'chat', 'player': 'X',
-                          'color': '#000', 'text': 'hi'})
+                          'color_class': 'player-color-1', 'text': 'hi'})
 
     a_chats = [m for m in sock_a.messages if m.get('multiplayer') == 'chat']
     c_chats = [m for m in sock_c.messages if m.get('multiplayer') == 'chat']
@@ -781,3 +879,48 @@ async def test_broadcast_continues_when_one_socket_raises(room):
     assert any(m.get('text') == 'hi' for m in c_chats)
     # B's queue is empty (its send raised before append).
     assert sock_b.messages == []
+
+
+# --------------------------------------------------------------------
+# Roster cap
+# --------------------------------------------------------------------
+
+async def test_roster_cap_evicts_oldest_disconnected_entry(room, monkeypatch):
+    """A signed-in client reconnecting under fresh names must not grow
+    the roster without bound."""
+    from flutterbug_server import room as room_module
+    monkeypatch.setattr(room_module, 'PLAYER_ROSTER_MAX', 5)
+
+    # Fill the cap and disconnect each in order, oldest first.
+    ids = []
+    for i in range(5):
+        cid, _ = connect(room, f'P{i}')
+        ids.append(cid)
+    for cid in ids:
+        room.remove_client(cid)
+
+    assert [e['name'] for e in room.player_roster] == [
+        'P0', 'P1', 'P2', 'P3', 'P4']
+
+    # New name pushes the oldest disconnected entry out.
+    connect(room, 'P5')
+    assert [e['name'] for e in room.player_roster] == [
+        'P1', 'P2', 'P3', 'P4', 'P5']
+
+
+async def test_roster_cap_overflows_rather_than_refuse_when_all_connected(
+        room, monkeypatch):
+    """If every slot is currently connected, we'd rather let the roster
+    overflow than refuse a real player to enforce the cap."""
+    from flutterbug_server import room as room_module
+    monkeypatch.setattr(room_module, 'PLAYER_ROSTER_MAX', 3)
+
+    for i in range(3):
+        connect(room, f'P{i}')
+    assert all(e['connected'] for e in room.player_roster)
+
+    connect(room, 'P3')
+    # Cap exceeded; nobody got evicted because nobody was disconnectable.
+    assert len(room.player_roster) == 4
+    assert [e['name'] for e in room.player_roster] == [
+        'P0', 'P1', 'P2', 'P3']

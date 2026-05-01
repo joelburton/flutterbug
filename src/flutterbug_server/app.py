@@ -37,7 +37,26 @@ AVAILABLE_THEMES = {
 # rewrite the Host header to localhost upstream, so a naive Origin==Host
 # check rejects legitimate tunneled connections. These suffixes let those
 # through without opening up arbitrary cross-origin WS clients.
+#
+# SECURITY MODEL: this allow-list is only safe because the session cookie
+# is scoped to the exact tunnel subdomain the host signed in on. Starlette's
+# SessionMiddleware sets no Domain attribute, so browsers store the cookie
+# host-only and a sibling tunnel at attacker.trycloudflare.com cannot read
+# it. Both trycloudflare.com and lhr.life are on the Public Suffix List,
+# so a malicious sibling also can't set a cookie on the parent domain that
+# our server would accept. If a future change ever adds a Domain attribute
+# to the session cookie, or we add a provider whose parent domain is NOT
+# on the PSL, this suffix list becomes a CSRF bypass — any attacker page
+# under <suffix> would pass the Origin check while sharing cookie scope
+# with the host's session.
 TUNNEL_ORIGIN_SUFFIXES = ('.trycloudflare.com', '.lhr.life')
+
+# Cap the player name accepted from clients. The signin form already
+# enforces maxlength=40 in the browser; the server matches that so a
+# hand-crafted query string can't smuggle a megabyte of name into the
+# roster (which is broadcast on every players envelope and prefixed
+# onto every chat/command line).
+PLAYERNAME_MAX_LENGTH = 40
 
 
 def _is_allowed_origin(origin: Optional[str], host: Optional[str]) -> bool:
@@ -106,12 +125,20 @@ def create_app(settings) -> FastAPI:
 
     app = FastAPI(lifespan=lifespan)
 
+    # When the server is exposed via a tunnel, the public URL is HTTPS
+    # by construction, so set Secure on the session cookie. This prevents
+    # the cookie from leaking if a future config (or a misbehaving proxy)
+    # ever serves the same session over plain HTTP. For purely-local
+    # development we leave it off so http://localhost still works.
+    tunneled = (
+        getattr(settings, 'tunnel', False)
+        or getattr(settings, 'cloudflare', False))
     app.add_middleware(
         SessionMiddleware,
         secret_key=settings.secret,
         max_age=864000,
         same_site='lax',
-        https_only=False,
+        https_only=tunneled,
     )
 
     jinja_env = Environment(
@@ -199,7 +226,7 @@ def create_app(settings) -> FastAPI:
         if not sessionid:
             return RedirectResponse(url='/', status_code=303)
 
-        playername = name.strip() or f'Player-{sessionid[:6]}'
+        playername = name.strip()[:PLAYERNAME_MAX_LENGTH] or f'Player-{sessionid[:6]}'
         themename = theme.strip().lower()
         if themename not in AVAILABLE_THEMES:
             themename = 'flutterbug'
@@ -255,7 +282,7 @@ def create_app(settings) -> FastAPI:
         room = websocket.app.state.room
         app_log = websocket.app.state.log
 
-        playername = name.strip() or f'Player-{sessionid[:6]}'
+        playername = name.strip()[:PLAYERNAME_MAX_LENGTH] or f'Player-{sessionid[:6]}'
         clientid = room.add_client(websocket, playername, sessionid)
         app_log.info('Client %s joined as %s', clientid, playername)
 

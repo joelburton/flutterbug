@@ -9,6 +9,7 @@ import shlex
 import signal
 import socket
 import subprocess
+import sys
 import threading
 import time
 import urllib.error
@@ -244,7 +245,6 @@ class _ColoredFormatter(logging.Formatter):
     """Pre-uvicorn log formatter matching uvicorn's colored output style."""
 
     def format(self, record):
-        import sys
         use_colors = hasattr(sys.stderr, 'isatty') and sys.stderr.isatty()
         color, spaces = _LEVEL_COLORS.get(record.levelno, ('', 1))
         if use_colors:

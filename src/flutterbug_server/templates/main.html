@@ -102,9 +102,16 @@ Collaborative interactive fiction player.
 
 <p>
 You are not signed in.
+<noscript>
+ <div class="row hint" style="color:#c0392b">
+  Flutterbug needs JavaScript to run. Enable it for this site and reload.
+ </div>
+</noscript>
 <form method="post" action="/" id="signin-form" autocomplete="off">
  <div class="row">
   <label for="playername">Your name:</label>
+  <!-- No `name` attribute: the field is read by inline JS and copied to the
+       /play URL on submit, so the server never sees it directly. -->
   <input id="playername" type="text" maxlength="40" autocomplete="off" placeholder="Enter your name">
  </div>
  <div class="row hint">This name will be remembered on this browser.</div>

@@ -49,9 +49,17 @@ var multiplayer_playername = {{ playername | tojson }};
 </div>
 <div id="shared-status"></div>
 <div id="players-list"></div>
-<h3>Recent Commands</h3>
+<h3>Recent Commands
+  <button id="download-commands" class="feed-download" type="button"
+          title="Download commands as a text file"
+          aria-label="Download commands">⤓</button>
+</h3>
 <div id="command-feed"></div>
-<h3>Chat</h3>
+<h3>Chat
+  <button id="download-chat" class="feed-download" type="button"
+          title="Download chat as a text file"
+          aria-label="Download chat">⤓</button>
+</h3>
 <div id="chat-messages"></div>
 <div id="chat-input-row">
   <input id="chat-input" type="text" placeholder="Say something..." autocomplete="off">

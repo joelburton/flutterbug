@@ -57,7 +57,7 @@ function callback_websocket_message(ev) {
     }
 
     if (obj.multiplayer == 'chat') {
-        append_chat(obj.player, obj.color, obj.text);
+        append_chat(obj.player, obj.color_class, obj.text);
         return;
     }
     if (obj.multiplayer == 'status') {
@@ -115,7 +115,8 @@ function update_player_list(players) {
         var name = player.name || ('Player ' + player.id);
         var item = $('<span></span>');
         item.text(name);
-        item[0].style.setProperty('--player-color', player.color || '#555');
+        if (player.color_class)
+            item.addClass(player.color_class);
         if (name === multiplayer_playername)
             item.addClass('me');
         list.append(item);
@@ -146,17 +147,34 @@ function send_typing(mode) {
 }
 
 function append_command(player, command) {
-    append_log_line((player || 'Player') + ': ' + (command || ''));
+    /* Build the line ourselves rather than going through append_log_line
+       so the command text lives in its own span. The download-commands
+       button reads .cmd-text spans to emit just the commands, dropping
+       the "PlayerName: " prefix. */
+    var feed = $('#command-feed');
+    if (!feed.length)
+        return;
+    var line = $('<div class="feed-line"></div>');
+    line.append(document.createTextNode((player || 'Player') + ': '));
+    var cmd = $('<span class="cmd-text"></span>');
+    cmd.text(command || '');
+    line.append(cmd);
+    feed.append(line);
+    while (feed.children().length > 30) {
+        feed.children().first().remove();
+    }
+    feed.scrollTop(feed[0].scrollHeight);
 }
 
-function append_chat(player, color, text) {
+function append_chat(player, color_class, text) {
     var feed = $('#chat-messages');
     if (!feed.length)
         return;
     var line = $('<div class="feed-line"></div>');
     var author = $('<strong class="chat-author"></strong>');
     author.text((player || 'Player') + ': ');
-    author[0].style.setProperty('--player-color', color || '#555');
+    if (color_class)
+        author.addClass(color_class);
     line.append(author);
     line.append(document.createTextNode(text || ''));
     feed.append(line);
@@ -240,6 +258,55 @@ function apply_gameport_layout(width, height) {
     window.dispatchEvent(new Event('resize'));
 }
 
+/* Trigger a browser download of `text` named `filename`. We build the
+   blob ourselves rather than using a data: URL so very long transcripts
+   don't hit URL-length limits. */
+function download_text(filename, text) {
+    var blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    /* Defer revocation so the click has definitely been picked up. */
+    setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+}
+
+/* Build a "YYYY-MM-DD-HHMM" suffix in local time so users get a
+   filename they can sort by session without timezone surprises. */
+function timestamp_suffix() {
+    var d = new Date();
+    function pad(n) { return n < 10 ? '0' + n : '' + n; }
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+        + '-' + pad(d.getHours()) + pad(d.getMinutes());
+}
+
+function download_commands() {
+    var lines = [];
+    $('#command-feed .feed-line').each(function() {
+        /* Skip lines without a .cmd-text span — those are system messages
+           ("[system] ..."), not player commands. */
+        var cmd = $(this).find('.cmd-text');
+        if (cmd.length)
+            lines.push(cmd.text());
+    });
+    download_text('flutterbug-commands-' + timestamp_suffix() + '.txt',
+                  lines.join('\n') + (lines.length ? '\n' : ''));
+}
+
+function download_chat() {
+    var lines = [];
+    $('#chat-messages .feed-line').each(function() {
+        /* Each chat line is "<strong>Name: </strong>text"; .text() flattens
+           that into "Name: text" which is the format we want for the file. */
+        lines.push($(this).text());
+    });
+    download_text('flutterbug-chat-' + timestamp_suffix() + '.txt',
+                  lines.join('\n') + (lines.length ? '\n' : ''));
+}
+
 function update_status(message) {
     var el = $('#shared-status');
     if (!el.length)
@@ -304,6 +371,8 @@ $(document).ready(function() {
     $('#chat-send').on('click', function() {
         send_chat();
     });
+    $('#download-commands').on('click', download_commands);
+    $('#download-chat').on('click', download_chat);
     $('#chat-input').on('keydown', function(ev) {
         if (ev.key === 'Enter') {
             send_chat();

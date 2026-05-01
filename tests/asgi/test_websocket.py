@@ -84,6 +84,18 @@ def test_websocket_falls_back_to_player_prefix_when_name_blank(client):
         assert names[0].startswith('Player-')
 
 
+def test_websocket_clamps_overlong_player_name(client):
+    """A hand-crafted ?name= must not smuggle a giant string into the roster
+    that then gets fanned out on every players envelope and prefixed onto
+    every chat/command line."""
+    from flutterbug_server.app import PLAYERNAME_MAX_LENGTH
+
+    with connect_as(client, 'B' * (PLAYERNAME_MAX_LENGTH + 500)) as ws:
+        roster = drain_until(ws, lambda m: m.get('multiplayer') == 'players')
+        names = [p['name'] for p in roster['players']]
+        assert names == ['B' * PLAYERNAME_MAX_LENGTH]
+
+
 def test_websocket_rejects_foreign_origin_with_1008(client):
     """A signed-in user visiting a malicious page must not be hijackable
     via cross-origin WS. Origin is validated before session check."""

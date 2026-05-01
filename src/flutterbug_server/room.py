@@ -43,16 +43,30 @@ from .snapshot import SnapshotState
 JsonDict = dict[str, Any]
 
 
-# Palette used to label each player's chat/command lines. Hand-picked to be
-# legible on a light background.
-PLAYER_COLORS = [
-    '#c0392b', '#2980b9', '#27ae60', '#8e44ad',
-    '#d35400', '#16a085', '#c0392b', '#7f8c8d',
-]
+# Number of distinct color slots cycled through for player labels. The
+# server only assigns a slot number; the actual hex value lives in each
+# theme's CSS as ``--fb-player-color-N``, so a dark theme can use
+# light/pastel hues and a light theme can use deep saturated ones
+# without the server having to know which is active.
+PLAYER_COLOR_SLOTS = 8
+
+
+def _player_color_class(slot: int) -> str:
+    """CSS class the client applies to color a player's chat/roster span."""
+    return f'player-color-{slot}'
 
 # Hard cap on chat message length. A misbehaving client could otherwise
 # fan out arbitrarily large strings to every player on every keystroke.
 CHAT_MAX_LENGTH = 1000
+
+# Hard cap on the player roster. The roster preserves disconnected entries
+# (so a returning player keeps their color and slot), but a signed-in
+# malicious client can reconnect under arbitrary new names and grow the
+# roster — and every entry gets fanned out on each `players` envelope.
+# When we hit the cap we evict the oldest *disconnected* entry; if the
+# whole cap is currently connected we let it overflow rather than refuse
+# a new player (the abuse pattern always leaves disconnects behind).
+PLAYER_ROSTER_MAX = 100
 
 
 class VMProcess(Protocol):
@@ -62,9 +76,6 @@ class VMProcess(Protocol):
     stdout: Any
 
     def terminate(self) -> None: ...
-
-
-VMFactory = Callable[[str], Awaitable[VMProcess]]
 
 
 async def _default_vm_factory(command: str, cwd: str) -> asyncio.subprocess.Process:
@@ -269,7 +280,7 @@ class SharedRoom(PersistSession):
         self.status_cols = status_cols
         self.clients: dict[int, dict] = {}
         self.next_clientid = 1
-        self.next_color_index = 0
+        self.next_color_slot = 0
         self.player_roster: list[dict] = []
         self.snapshot = SnapshotState()
         self.input_queue: asyncio.Queue = asyncio.Queue()
@@ -292,6 +303,17 @@ class SharedRoom(PersistSession):
         # in flex mode this is informational. Tracked by sessionid (not
         # clientid) so a host browser refresh — same cookie, new
         # websocket — keeps the host role.
+        #
+        # Sticky for the lifetime of this room: never reassigned once
+        # set, and not reset by ``close()``. The deployment model is
+        # "host runs the server and invites friends," so we want to
+        # preserve the host role even if the host has a connection gap
+        # long enough that the VM tears down (CLOSE_DELAY) and a friend
+        # is the first to reconnect afterward. That friend's init
+        # bootstraps a new VM, but they do not get promoted to host —
+        # the original host's session stays the host, and their
+        # arranges continue to be treated as host arranges when they
+        # return. A server restart is the only thing that clears it.
         self.host_sessionid: str | None = None
 
     def __repr__(self) -> str:
@@ -300,13 +322,13 @@ class SharedRoom(PersistSession):
     def close(self) -> None:
         super().close()
         # Reset everything tied to the now-dead VM so the room is reusable.
+        # ``host_sessionid`` is intentionally NOT reset — see __init__.
         self.snapshot.reset()
         self.specialinput_clientid = None
         self.status_message = ''
         self.player_roster.clear()
-        self.next_color_index = 0
+        self.next_color_slot = 0
         self.locked_metrics = None
-        self.host_sessionid = None
 
     # -----------------------------------------------------------------
     # Logging / image-URL synthesis
@@ -385,17 +407,27 @@ class SharedRoom(PersistSession):
         self.next_clientid += 1
         roster_entry = next((e for e in self.player_roster if e['name'] == playername), None)
         if roster_entry:
-            color = roster_entry['color']
+            color_slot = roster_entry['color_slot']
             roster_entry['connected'] = True
         else:
-            color = PLAYER_COLORS[self.next_color_index % len(PLAYER_COLORS)]
-            self.next_color_index += 1
-            self.player_roster.append({'name': playername, 'color': color, 'connected': True})
+            if len(self.player_roster) >= PLAYER_ROSTER_MAX:
+                # Drop the oldest disconnected entry to make room. If everyone
+                # in the roster is currently connected we skip eviction and
+                # let the roster overflow — refusing a real player to enforce
+                # the cap would be worse than the abuse case it guards against.
+                for i, entry in enumerate(self.player_roster):
+                    if not entry['connected']:
+                        del self.player_roster[i]
+                        break
+            color_slot = (self.next_color_slot % PLAYER_COLOR_SLOTS) + 1
+            self.next_color_slot += 1
+            self.player_roster.append({
+                'name': playername, 'color_slot': color_slot, 'connected': True})
         self.clients[clientid] = {
             'sock': sock,
             'playername': playername,
             'sessionid': sessionid,
-            'color': color,
+            'color_slot': color_slot,
         }
         return clientid
 
@@ -430,7 +462,8 @@ class SharedRoom(PersistSession):
 
     def list_players(self) -> list[dict]:
         return [
-            {'name': entry['name'], 'color': entry['color']}
+            {'name': entry['name'],
+             'color_class': _player_color_class(entry['color_slot'])}
             for entry in self.player_roster
             if entry['connected']
         ]
@@ -548,12 +581,13 @@ class SharedRoom(PersistSession):
             await self.send_snapshot_to_client(clientid)
             return
 
-        # The first init that reaches the VM claims this client's session
-        # as the host — their arranges drive layout in fixed mode and their
-        # gameport width seeds locked_metrics in both modes.
+        # The first init that reaches the VM in this room's lifetime claims
+        # this client's session as the host. Subsequent inits that bootstrap
+        # a relaunched VM (after a CLOSE_DELAY teardown) do NOT reassign the
+        # host role — see the ``host_sessionid`` comment in __init__.
         if evtype == EVT_INIT and not self.snapshot.has_output:
             sender_sessionid = self.clients.get(clientid, {}).get('sessionid')
-            if sender_sessionid is not None:
+            if sender_sessionid is not None and self.host_sessionid is None:
                 self.host_sessionid = sender_sessionid
             if self.mode == MODE_FLEX:
                 msg = self._rewrite_init_metrics_for_flex(obj, msg)
@@ -662,16 +696,25 @@ class SharedRoom(PersistSession):
                 await self._send_layout_to(clientid)
 
     async def _handle_chat(self, clientid: int, obj: JsonDict) -> None:
+        # Only ``text`` is read from the inbound envelope; ``player`` and
+        # ``color_class`` are filled in from the server's own client record
+        # so a client cannot spoof another player's name or change their
+        # own color. Any other fields a client adds are silently dropped —
+        # when extending the chat protocol, add explicit handling here
+        # rather than trusting the client-supplied envelope.
         text = str(obj.get('text', '')).strip()
         if not text:
             return
         if len(text) > CHAT_MAX_LENGTH:
             text = text[:CHAT_MAX_LENGTH]
         conn = self.clients.get(clientid)
+        color_class = (
+            _player_color_class(conn['color_slot']) if conn
+            else _player_color_class(1))
         await self.broadcast({
             MP_KEY: MP_CHAT,
             'player': conn['playername'] if conn else 'Player',
-            'color': conn['color'] if conn else '#888',
+            'color_class': color_class,
             'text': text,
         })
 

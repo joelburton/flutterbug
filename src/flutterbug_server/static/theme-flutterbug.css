@@ -74,6 +74,19 @@
   --fb-players-margin-x: 0.875rem;
   --fb-player-fallback-color: #555;
 
+  /* Player label colors. Hand-picked to be perceptually distinct AND
+     legible on the warm beige sidebar/feed backgrounds (--fb-sidebar-bg
+     #efe6d8, --fb-feed-bg #f8f3ea). Saturated and dark; each lands at
+     roughly WCAG AA against the lightest of the two backgrounds. */
+  --fb-player-color-1: #a3281c; /* deep red */
+  --fb-player-color-2: #1f4f9e; /* royal blue */
+  --fb-player-color-3: #1e6d3a; /* forest green */
+  --fb-player-color-4: #6b2c87; /* purple */
+  --fb-player-color-5: #a05920; /* burnt orange */
+  --fb-player-color-6: #106d75; /* teal */
+  --fb-player-color-7: #7a1f3d; /* wine */
+  --fb-player-color-8: #3d3a36; /* charcoal */
+
   --fb-feed-margin-x: 0.875rem;
   --fb-command-margin-bottom: 0.5rem;
   --fb-chat-margin-bottom: 0.25rem;

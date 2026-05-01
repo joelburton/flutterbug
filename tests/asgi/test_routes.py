@@ -72,6 +72,21 @@ def test_play_falls_back_to_player_prefix_when_name_blank(signed_in_client):
     assert 'Player-' in r.text
 
 
+def test_play_clamps_overlong_player_name(signed_in_client):
+    """The browser form caps maxlength=40, but a hand-crafted URL can ship
+    a megabyte. Server must clamp so it doesn't land in the roster and get
+    fanned out on every players envelope."""
+    from flutterbug_server.app import PLAYERNAME_MAX_LENGTH
+
+    long_name = 'A' * (PLAYERNAME_MAX_LENGTH + 500)
+    r = signed_in_client.get(f'/play?name={long_name}')
+    assert r.status_code == 200
+    # The full overlong name must not appear in the rendered page.
+    assert long_name not in r.text
+    # The clamped prefix must appear.
+    assert 'A' * PLAYERNAME_MAX_LENGTH in r.text
+
+
 def test_signin_form_omits_password_field_when_no_password_required(client):
     r = client.get('/')
     assert 'name="password"' not in r.text
