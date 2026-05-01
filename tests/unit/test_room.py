@@ -1,9 +1,14 @@
 """Unit tests for SharedRoom helpers that don't require a running VM."""
 
+import asyncio
 import logging
+import sys
 from pathlib import Path
 
-from flutterbug_server.room import SharedRoom
+import pytest
+
+from flutterbug_server import room as room_module
+from flutterbug_server.room import SharedRoom, _default_vm_factory
 
 
 def _make_room(resource_dir: Path | None) -> SharedRoom:
@@ -121,3 +126,40 @@ def test_add_missing_image_urls_tolerates_non_int_image_field(tmp_path):
     bad = {'special': 'image', 'image': 'not-a-number'}
     assert room._add_missing_image_urls(bad) == 0
     assert 'url' not in bad
+
+
+# -----------------------------------------------------------------
+# _default_vm_factory: pre-resolve the program against PATH so a missing
+# binary surfaces a clear error rather than uvloop's bare ENOENT.
+# -----------------------------------------------------------------
+
+@pytest.mark.skipif(sys.platform == 'win32', reason='POSIX-only path')
+def test_default_vm_factory_raises_clear_error_for_missing_binary(monkeypatch):
+    monkeypatch.setattr(room_module.shutil, 'which', lambda _: None)
+
+    with pytest.raises(FileNotFoundError) as exc_info:
+        asyncio.run(_default_vm_factory('definitely-not-a-real-cmd --rem', '/tmp'))
+
+    msg = str(exc_info.value)
+    assert 'definitely-not-a-real-cmd' in msg
+    assert 'not found on PATH' in msg
+
+
+@pytest.mark.skipif(sys.platform == 'win32', reason='POSIX-only path')
+def test_default_vm_factory_passes_resolved_path_to_subprocess(monkeypatch):
+    monkeypatch.setattr(room_module.shutil, 'which', lambda _: '/abs/emglken')
+
+    seen = {}
+
+    async def fake_exec(*args, **kwargs):
+        seen['args'] = args
+        seen['kwargs'] = kwargs
+        return 'sentinel'
+
+    monkeypatch.setattr(asyncio, 'create_subprocess_exec', fake_exec)
+
+    result = asyncio.run(_default_vm_factory('emglken Game.z5 --rem', '/tmp'))
+
+    assert result == 'sentinel'
+    assert seen['args'] == ('/abs/emglken', 'Game.z5', '--rem')
+    assert seen['kwargs']['cwd'] == '/tmp'

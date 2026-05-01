@@ -10,6 +10,7 @@ import copy
 import json
 import os.path
 import shlex
+import shutil
 import subprocess
 import sys
 from logging import Logger
@@ -80,8 +81,17 @@ async def _default_vm_factory(command: str, cwd: str) -> asyncio.subprocess.Proc
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
         )
+    # Resolve the program against PATH ourselves so a missing binary
+    # surfaces as a clear "not found on PATH" message instead of the bare
+    # ENOENT that uvloop's uv_spawn raises.
+    resolved = shutil.which(args[0])
+    if resolved is None:
+        raise FileNotFoundError(
+            f'{args[0]!r} not found on PATH. Install it (e.g. '
+            f'`npm install -g emglken` for the default interpreter) '
+            f'or pass a full path via --command.')
     return await asyncio.create_subprocess_exec(
-        *args,
+        resolved, *args[1:],
         cwd=cwd,
         stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.PIPE,
