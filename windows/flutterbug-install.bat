@@ -35,7 +35,7 @@ if %ERRORLEVEL% neq 0 (
 
 echo.
 echo === Installing Flutterbug ===
-%PYTHON% -m pip install --user --upgrade git+https://github.com/joelburton/flutterbug.git@v0.94
+%PYTHON% -m pip install --user --upgrade git+https://github.com/joelburton/flutterbug.git@v0.95
 if %ERRORLEVEL% neq 0 (
     echo.
     echo Flutterbug install failed. See errors above.
