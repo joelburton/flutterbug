@@ -8,9 +8,7 @@ if "%~1" == "" (
     echo Drag a story file onto this batch file to start playing.
     echo.
     echo Supported formats include: .z3 .z5 .z8 .zblorb .ulx .gblorb .t3 .hex .saa
-    echo.
-    pause
-    exit /b 1
+    goto :wait_and_exit
 )
 
 where python >nul 2>nul
@@ -26,12 +24,14 @@ if %ERRORLEVEL% == 0 (
 echo.
 echo ERROR: Python is not installed (or not on PATH).
 echo Run flutterbug-install.bat first.
-echo.
-pause
-exit /b 1
+goto :wait_and_exit
 :found_python
 
 REM Run from the story file's directory so save files land beside it.
 cd /d "%~dp1"
 %PYTHON% -m flutterbug_server --no-password --open --story="%~nx1"
-pause
+
+:wait_and_exit
+echo.
+echo Press any key to close this window...
+pause >nul
