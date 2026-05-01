@@ -110,18 +110,20 @@ def test_start_tunnel_extracts_url_from_provider_output(monkeypatch):
     assert proc is fake
 
 
-def test_start_tunnel_raises_systemexit_when_binary_missing(monkeypatch):
+def test_start_tunnel_raises_systemexit_when_binary_missing(monkeypatch, caplog):
     def boom(*a, **k):
         raise FileNotFoundError()
     monkeypatch.setattr(cli.subprocess, 'Popen', boom)
 
-    with pytest.raises(SystemExit) as exc_info:
-        cli._start_tunnel(
-            'localhost.run', ['ssh', '...'],
-            cli._LOCALHOSTRUN_URL_RE,
-            logging.getLogger('test'),
-            'ssh not found on PATH')
-    assert 'ssh not found' in str(exc_info.value)
+    with caplog.at_level(logging.ERROR, logger='test'):
+        with pytest.raises(SystemExit) as exc_info:
+            cli._start_tunnel(
+                'localhost.run', ['ssh', '...'],
+                cli._LOCALHOSTRUN_URL_RE,
+                logging.getLogger('test'),
+                'ssh not found on PATH')
+    assert exc_info.value.code == 1
+    assert 'ssh not found' in caplog.text
 
 
 def test_start_tunnel_leaves_event_unset_when_no_url_in_output(monkeypatch):
