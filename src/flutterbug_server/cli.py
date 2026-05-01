@@ -120,6 +120,7 @@ def _start_tunnel(
         print_banner()
 
     def reader():
+        assert proc.stdout is not None  # stdout=PIPE above
         for line in proc.stdout:
             line = line.rstrip()
             if line:
