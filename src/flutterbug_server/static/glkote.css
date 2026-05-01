@@ -273,7 +273,7 @@
 }
 
 .Style_preformatted {
-  font-family: monaco, andale mono, lucidatypewriter, courier, courier new, monospace;
+  font-family: var(--glk-grid-font-family, monaco, andale mono, lucidatypewriter, courier, courier new, monospace);
 }
 
 .Style_header {
