@@ -27,7 +27,7 @@ REM Locate npm.
 where npm >nul 2>nul
 if %ERRORLEVEL% neq 0 (
     echo.
-    echo ERROR: Node.js / npm is not installed (or not on PATH).
+    echo ERROR: Node.js / npm is not installed ^(or not on PATH^).
     echo.
     echo Install Node.js LTS from https://nodejs.org/ and try again.
     goto :wait_and_exit

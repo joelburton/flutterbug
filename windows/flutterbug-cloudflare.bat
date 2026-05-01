@@ -32,11 +32,11 @@ goto :wait_and_exit
 where cloudflared >nul 2>nul
 if %ERRORLEVEL% neq 0 (
     echo.
-    echo ERROR: cloudflared is not installed (or not on PATH).
+    echo ERROR: cloudflared is not installed ^(or not on PATH^).
     echo.
     echo Install it from:
     echo   https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/
-    echo or use flutterbug-tunnel.bat (Localhost.run) instead, which needs no extra install.
+    echo or use flutterbug-tunnel.bat ^(Localhost.run^) instead, which needs no extra install.
     goto :wait_and_exit
 )
 
