@@ -81,7 +81,8 @@ def _start_tunnel(
             bufsize=1,
         )
     except FileNotFoundError:
-        raise SystemExit(missing_msg) from None
+        log.error(missing_msg)
+        raise SystemExit(1) from None
 
     url_holder: dict = {'url': None}
     url_event = threading.Event()

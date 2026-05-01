@@ -44,7 +44,7 @@ where = ["src"]
 flutterbug_server = [
   "templates/*",
   "static/*",
-  "static/resource/*",
+  "static/**/*",
 ]
 
 [tool.pytest.ini_options]
