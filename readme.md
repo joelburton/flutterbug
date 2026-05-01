@@ -29,9 +29,9 @@ want to learn more about how it works.
 ## Requirements
 
 - Python
-- Node
+- Node.js
 
-You may have these already; if not, you can get both from your OS package system.
+If you don't have these, you should install these:
 
 - **MacOS**: `brew install node python`
 - **Linux**: use the installer for your distro
