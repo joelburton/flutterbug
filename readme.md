@@ -18,11 +18,10 @@ It can play:
 Grab the **flutterbug-windows.zip** from the
 [latest release](https://github.com/joelburton/flutterbug/releases/latest)
 and follow the included `readme.txt` (also viewable in
-[`windows/readme.txt`](windows/readme.txt)). It walks you through Python
-+ Node.js + a one-click install batch file, and gives you drag-and-drop
+[`windows/readme.txt`](windows/readme.txt)). It walks you through Python, Node.js, and a one-click install batch file, and gives you drag-and-drop
 launchers for solo and friends-online play.
 
-The rest of this file is for people who want to develop on Flutterbug,
+The rest of this file is for people using other operating systems, or who
 are running into trouble the Windows quick-start didn't cover, or just
 want to learn more about how it works.
 
@@ -104,9 +103,9 @@ Quitting Flutterbug will disconnect that tunnel.
 > can issue `save` and `restore` commands that read and write
 > `*.glksave` files in the directory you started flutterbug from. They
 > can also overwrite each others' saves, and the sign-in page lists the
-> save filenames in that directory to anyone who's signed in. Launch
-> flutterbug from a clean per-game directory, not from your home directory
-> or any any directory containing valuable data.
+> save filenames in that directory to anyone who's signed in. To be safe,
+> launch flutterbug from a clean per-game directory, not from your home
+> directory or any any directory containing valuable data.
 
 ## Other options
 
@@ -176,5 +175,7 @@ anything.
 
 Flutterbug is written by Joel Burton <joel@joelburton.com>.
 
-It is based heavily on the remote-if-demo script by Andrew Plotkin, as well as his
-GlkOte library.
+It is based heavily on the remote-if-demo script by Andrew Plotkin, as well as his GlkOte library.
+
+Thanks to @inventor200, @bg, @pieartsy, and @dannii for their support and
+help (all handles are at [intfiction.org](intfiction.org)).
