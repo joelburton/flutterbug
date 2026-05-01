@@ -54,3 +54,6 @@ htmlcov/
 # Claude Code local settings
 .claude/
 CLAUDE.md
+
+# Working code-review notes
+review-*.md
