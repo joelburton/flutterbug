@@ -34,7 +34,7 @@ AVAILABLE_THEMES = {
     'flutterbug': 'theme-flutterbug.css',
     'redrum': 'theme-redrum.css',
     'nocturne': 'theme-nocturne.css',
-    'nerd-moth': 'theme-nerd-moth.css',
+    'nerd': 'theme-nerd-moth.css',
     'light': 'theme-base-light.css',
     'dark': 'theme-base-dark.css',
 }
