@@ -201,6 +201,14 @@ def _wait_for_tunnel_dns(url: str, log: logging.Logger, timeout: float = 30.0) -
     resolver = dns.resolver.Resolver()
     resolver.lifetime = 2.0
     resolver.cache = None
+    # Skip loopback stub resolvers (e.g. systemd-resolved at 127.0.0.53).
+    # dnspython queries them directly, bypassing getaddrinfo — which is great
+    # for macOS's mDNSResponder, but on Linux those stubs have their own
+    # NXDOMAIN cache that defeats the poll just as badly. Supplement with
+    # real upstream servers so the check always reaches authoritative DNS.
+    upstream = ['1.1.1.1', '8.8.8.8']
+    real_ns = [ns for ns in resolver.nameservers if not ns.startswith('127.')]
+    resolver.nameservers = real_ns + upstream
     deadline = time.time() + timeout
     last_logged = 0.0
     while time.time() < deadline:
@@ -409,6 +417,10 @@ def main():
                         # Safari's first lookup may NXDOMAIN and macOS's
                         # mDNSResponder caches that negative answer.
                         url = tunnel_url_holder['url']
+                        log.info(
+                            'Waiting 3 seconds for tunnel DNS to propagate '
+                            'before opening browser.')
+                        time.sleep(3.0)
                         if _wait_for_tunnel_dns(url, log, timeout=30.0):
                             log.info('Opening tunnel URL in browser: %s', url)
                             webbrowser.open(url)
