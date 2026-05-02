@@ -30,6 +30,7 @@ MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 AVAILABLE_THEMES = {
     'flutterbug': 'theme-flutterbug.css',
     'nocturne': 'theme-nocturne.css',
+    'parchment-dark': 'theme-parchment-dark.css',
 }
 
 # Hostname suffixes for tunnel providers we ship support for. A signed-in
