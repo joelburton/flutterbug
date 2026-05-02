@@ -197,6 +197,7 @@ def test_wait_for_tunnel_dns_returns_true_when_hostname_resolves(monkeypatch):
     class _OkResolver:
         lifetime = 0
         cache = None
+        nameservers = ['127.0.0.53']
 
         def resolve(self, hostname, rtype):
             return ['1.2.3.4']
@@ -214,6 +215,7 @@ def test_wait_for_tunnel_dns_short_circuits_when_url_has_no_host(monkeypatch):
     class _Resolver:
         lifetime = 0
         cache = None
+        nameservers = []
 
         def resolve(self, *a, **kw):
             called.append(True)
@@ -229,6 +231,7 @@ def test_wait_for_tunnel_dns_returns_false_when_nxdomain_persists(monkeypatch):
     class _NxResolver:
         lifetime = 0
         cache = None
+        nameservers = ['127.0.0.53']
 
         def resolve(self, hostname, rtype):
             raise cli.dns.resolver.NXDOMAIN()
@@ -248,6 +251,7 @@ def test_wait_for_tunnel_dns_recovers_after_initial_nxdomain(monkeypatch):
     class _SlowResolver:
         lifetime = 0
         cache = None
+        nameservers = ['127.0.0.53']
 
         def resolve(self, hostname, rtype):
             state['attempts'] += 1
