@@ -10,10 +10,59 @@
 <style type="text/css">
 body {
 	font-family: var(--fb-font-serif, Georgia, serif);
-	color: var(--glk-buffer-text-color, #333);
-	background-color: var(--fb-color-gameport-bg, #f5f5f5);
-	margin: 24px;
+	color: var(--fb-sidebar-text, #2a241c);
+	background-color: var(--fb-sidebar-bg, #efe6d8);
+	margin: 0;
+	min-height: 100vh;
+	display: flex;
+	justify-content: center;
+}
+main {
+	width: 100%;
 	max-width: 720px;
+	padding: 32px 28px 48px;
+	box-sizing: border-box;
+}
+.brand {
+	display: flex;
+	align-items: center;
+	gap: 18px;
+	margin-bottom: 4px;
+}
+.brand img {
+	width: 64px;
+	height: 64px;
+	border-radius: 10px;
+	object-fit: cover;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+	flex-shrink: 0;
+}
+.brand h1 {
+	margin: 0;
+	font-size: 2em;
+	color: var(--fb-brand-color, #2f3f56);
+	letter-spacing: 0.01em;
+}
+.tagline {
+	margin: 6px 0 28px;
+	font-style: italic;
+	opacity: 0.75;
+}
+section {
+	margin: 22px 0;
+	padding: 18px 20px;
+	border: 1px solid var(--fb-feed-border, #c6b59a);
+	background: var(--fb-feed-bg, #f8f3ea);
+	border-radius: 8px;
+}
+section h2 {
+	margin: 0 0 12px;
+	font-size: 1.05em;
+	font-weight: bold;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--fb-h3-color, var(--fb-sidebar-text));
+	opacity: 0.85;
 }
 .row {
 	margin: 10px 0;
@@ -22,53 +71,95 @@ label {
 	display: inline-block;
 	min-width: 110px;
 }
-input[type=text] {
+input[type=text],
+input[type=password],
+select {
 	min-width: 240px;
-	padding: 4px 6px;
+	padding: 6px 8px;
+	background: var(--fb-chat-input-bg, #fdf9f3);
+	color: var(--fb-chat-input-color, #2a241c);
+	border: 1px solid var(--fb-chat-input-border, #bca98a);
+	border-radius: 4px;
+	font: inherit;
+}
+input[type=text]::placeholder,
+input[type=password]::placeholder {
+	color: var(--fb-chat-input-placeholder-color, #8a7a66);
+}
+input[type=text]:focus,
+input[type=password]:focus,
+select:focus {
+	outline: 2px solid var(--fb-brand-color, #2f3f56);
+	outline-offset: 1px;
 }
 input[type=submit] {
-	background-color: var(--fb-sidebar-bg, #efe6d8);
-	color: var(--fb-sidebar-text, #2a241c);
-	border: 1px solid var(--fb-sidebar-border, #bca98a);
-	padding: 8px 16px;
+	background-color: var(--fb-chat-send-bg, #ddd0bc);
+	color: var(--fb-chat-send-color, #2a241c);
+	border: 1px solid var(--fb-chat-send-border, #bca98a);
+	padding: 8px 18px;
 	font-family: var(--fb-font-serif, Georgia, serif);
 	font-size: 1em;
 	border-radius: 4px;
 	cursor: pointer;
-	transition: opacity 0.2s;
+	transition: opacity 0.15s, transform 0.05s;
 }
 input[type=submit]:hover {
-	opacity: 0.8;
+	opacity: 0.85;
 }
 input[type=submit]:active {
-	opacity: 0.6;
+	transform: translateY(1px);
+}
+/* Primary call-to-action: "Begin playing the game". */
+#play-form input[type=submit] {
+	background-color: var(--fb-brand-color, #2f3f56);
+	color: var(--fb-sidebar-bg, #efe6d8);
+	border-color: var(--fb-brand-color, #2f3f56);
+	font-weight: bold;
 }
 .hint {
-	color: var(--glk-buffer-text-color, #555);
-	opacity: 0.75;
+	color: var(--fb-sidebar-text, #2a241c);
+	opacity: 0.7;
 	font-size: 0.95em;
+}
+.error {
+	color: #c0392b;
+	font-weight: bold;
 }
 .game-card {
 	display: flex;
 	gap: 18px;
 	align-items: flex-start;
-	margin: 22px 0 28px;
-	padding: 14px;
-	border: 1px solid var(--fb-sidebar-border, #bca98a);
-	border-radius: 8px;
-	background: rgba(255, 255, 255, 0.55);
+	margin: 0;
+	padding: 0;
+	border: none;
+	background: transparent;
 }
 .game-card img {
 	max-width: 140px;
 	height: auto;
-	border-radius: 4px;
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+	border-radius: 6px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+	flex-shrink: 0;
 }
 .game-card h2 {
 	margin: 0 0 8px;
 	font-size: 1.3em;
+	font-weight: bold;
+	letter-spacing: 0;
+	text-transform: none;
+	color: var(--fb-sidebar-text, #2a241c);
+	opacity: 1;
 }
 .game-card p {
+	margin: 0;
+}
+.signed-in-row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+.signed-in-row form {
 	margin: 0;
 }
 </style>
@@ -76,14 +167,17 @@ input[type=submit]:active {
 
 <body>
 
-<h1>Flutterbug</h1>
+<main>
 
-<p>
-Collaborative interactive fiction player.
-</p>
+<div class="brand">
+ <img src="/static/butterfly.jpg" alt="">
+ <h1>Flutterbug</h1>
+</div>
+<p class="tagline">Collaborative interactive fiction player.</p>
 
 {% if game_info and (game_info.title or game_info.author or game_info.cover_art_url) %}
-<div class="game-card">
+<section>
+ <div class="game-card">
  {% if game_info.cover_art_url %}
  <img src="{{ game_info.cover_art_url }}" alt="Cover art for {{ game_info.title or 'this game' }}">
  {% endif %}
@@ -95,15 +189,16 @@ Collaborative interactive fiction player.
 	<p class="hint">By {{ game_info.author }}</p>
 	{% endif %}
  </div>
-</div>
+ </div>
+</section>
 {% endif %}
 
 {% if not sessionid %}
 
-<p>
-You are not signed in.
+<section>
+<h2>Sign in</h2>
 <noscript>
- <div class="row hint" style="color:#c0392b">
+ <div class="row error">
   Flutterbug needs JavaScript to run. Enable it for this site and reload.
  </div>
 </noscript>
@@ -122,41 +217,49 @@ You are not signed in.
  </div>
  {% endif %}
  {% if password_error %}
- <div class="row hint" style="color:#c0392b">Incorrect password. Try again.</div>
+ <div class="row error">Incorrect password. Try again.</div>
  {% endif %}
- <input name="signin" type="submit" value="Sign In">
+ <div class="row">
+  <input name="signin" type="submit" value="Sign In">
+ </div>
 </form>
-</p>
+</section>
 
 {% else %}
 
-<p>
-Your session ID is {{sessionid}}.
-<form method="post" action="/" id="signout-form">
- <input id="signout-button" name="signout" type="submit" value="Sign Out">
-</form>
-</p>
+<section>
+<h2>Session</h2>
+<div class="row signed-in-row">
+ <span class="hint" id="current-name">Playing as: …</span>
+ <form method="post" action="/" id="signout-form">
+  <input id="signout-button" name="signout" type="submit" value="Sign Out">
+ </form>
+</div>
+<div class="row hint">Session ID: {{sessionid}}</div>
+</section>
 
-<p id="current-name" class="hint"></p>
-
-<p>
-<label for="theme-select">Theme:</label>
-<select id="theme-select">
-{% for theme in themes %}
- <option value="{{theme['key']}}">{{theme['label']}}</option>
-{% endfor %}
-</select>
-</p>
-
-<p>
+<section>
+<h2>Play</h2>
+<div class="row">
+ <label for="theme-select">Theme:</label>
+ <select id="theme-select">
+ {% for theme in themes %}
+  <option value="{{theme['key']}}">{{theme['label']}}</option>
+ {% endfor %}
+ </select>
+</div>
 <form id="play-form" method="get" action="/play2">
  <input type="hidden" name="name" id="play-name">
  <input type="hidden" name="theme" id="play-theme">
- <input type="submit" value="Begin playing the game">
+ <div class="row">
+  <input type="submit" value="Begin playing the game">
+ </div>
 </form>
-</p>
+</section>
 
 {% endif %}
+
+</main>
 
 <script type="text/javascript">
 (function() {
