@@ -21,6 +21,10 @@ var multiplayer_playername = {{ playername | tojson }};
 </script>
 
 <script src="/static/jquery-3.7.1.min.js?v={{ asset_version }}" type="text/javascript"></script>
+<!-- Plotkin's simplified file-pick dialog (vendored). Used by /play already;
+     /play2 wraps it in an async adapter so AsyncGlk's Dialog.prompt() goes
+     through the same flutterbug-styled modal as /play. -->
+<script src="/static/namedialog.js?v={{ asset_version }}" type="text/javascript"></script>
 <script src="/static/play2.bundle.js?v={{ asset_version }}" type="text/javascript"></script>
 
 </head>

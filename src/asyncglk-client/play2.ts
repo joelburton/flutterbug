@@ -18,6 +18,21 @@ import * as protocol from 'asyncglk/dist/common/protocol.js'
 // /static/jquery-3.7.1.min.js) and exposed as a global. We don't bundle it.
 declare const $: JQueryStatic
 
+// namedialog.js is loaded as a separate <script> tag in play2.html and
+// exposes a Dialog global (Plotkin's simplified file-pick dialog).
+// FlutterbugDialog below wraps it for AsyncGlk's async interface.
+declare const Dialog: {
+    classname: string
+    init(iface?: {GlkOte?: unknown, dom_prefix?: string}): void
+    inited(): boolean
+    open(
+        tosave: boolean,
+        usage: string | null,
+        gameid: string | null,
+        callback: (fileref: {filename: string, usage?: string, gameid?: string} | null) => void,
+    ): void
+}
+
 // Filled in by play2.html's inline <script> before the bundle loads.
 declare const multiplayer_playername: string
 
@@ -80,19 +95,36 @@ function open_websocket(): void {
     websocket.onmessage = callback_websocket_message
 }
 
-/* Minimal Dialog impl for the PoC. AsyncGlk's full
-   ProviderBasedBrowserDialog drags in Svelte UI components that need
-   esbuild-svelte to bundle (deferred); this stub gets save/restore working
-   with a plain window.prompt(). Polished UI is a phase-3+ item. */
-const SimpleDialog = {
+/* AsyncGlk Dialog adapter that wraps Plotkin's namedialog.js
+   (loaded from /static/namedialog.js as a separate <script>).
+   namedialog.js is callback-based and Plotkin's-Dialog-shaped:
+   `Dialog.open(tosave, usage, gameid, cb)` shows a styled modal in
+   #windowport and calls cb(fileref) or cb(null) on cancel.
+   AsyncGlk wants `async: true` + `prompt(extension, isWrite) →
+   Promise<string|null>`. AsyncGlk gives us the file *extension*
+   ("glksave", "txt", etc.) but namedialog needs the Glk *usage*
+   ("save", "transcript", "command", "data") — and crucially, when
+   usage is "save" namedialog calls /savefiles and renders a
+   click-to-pick list of existing saves. Map back so the load dialog
+   shows that list rather than just an input field. */
+/* AsyncGlk's filetype_to_extension returns ".glksave" (with leading
+   dot), not "glksave". Strip before lookup. */
+const EXTENSION_TO_USAGE: Record<string, string> = {
+    glksave: 'save',
+    txt: 'transcript',  /* approximation; namedialog only treats
+                            'save' specially anyway, so the others all
+                            collapse to a plain input field. */
+}
+
+const FlutterbugDialog = {
     async: true as const,
     prompt(extension: string, is_write: boolean): Promise<string | null> {
+        const ext = extension.replace(/^\./, '')
+        const usage = EXTENSION_TO_USAGE[ext] ?? null
         return new Promise<string | null>(resolve => {
-            const action = is_write ? 'Save as' : 'Load from'
-            const hint = '(.' + extension + ' will be appended)'
-            const name = window.prompt(action + ' ' + hint + ':')
-            if (!name) { resolve(null); return }
-            resolve(name + '.' + extension)
+            Dialog.open(is_write, usage, null, fileref => {
+                resolve(fileref ? fileref.filename : null)
+            })
         })
     },
 }
@@ -106,7 +138,7 @@ function callback_websocket_open(): void {
     // whole shape.
     glkote!.init({
         accept: accept,
-        Dialog: SimpleDialog as any,
+        Dialog: FlutterbugDialog as any,
     } as any)
 }
 
