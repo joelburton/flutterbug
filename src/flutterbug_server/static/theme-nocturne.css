@@ -14,8 +14,6 @@
   /* AsyncGlk gameport palette. */
   --glkote-buffer-bg: #18212c;
   --glkote-buffer-fg: #d9e3ee;
-  --glkote-buffer-line-height: 1.52;
-  --glkote-buffer-base-size: 19px;
   --glkote-buffer-reverse-bg: #d9e3ee;
   --glkote-buffer-reverse-fg: #18212c;
   --glkote-grid-bg: #111922;

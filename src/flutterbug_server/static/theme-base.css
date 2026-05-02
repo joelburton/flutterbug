@@ -24,6 +24,11 @@
      --glkote-grid-size / --glkote-grid-line-height. */
   --fb-game-font-scale: 1;
 
+
+  /* Base buffer sizes. */
+  --glkote-buffer-line-height: 1.45;
+  --glkote-buffer-base-size: 18px;
+
   /* AsyncGlk grid metrics. The base sizes are read by play2.ts and
      multiplied by --fb-game-font-scale on each font-stepper change. */
   --glkote-grid-base-size: 14px;

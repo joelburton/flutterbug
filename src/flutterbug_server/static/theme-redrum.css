@@ -1,22 +1,10 @@
 /*
  * Redrum theme — crimson night, dark mode.
- *
- * Inherits universal defaults from theme-base.css and dark-mode shared
- * defaults (serif stack, player palette) from theme-base-dark.css.
- *
- * Originally a Parchment-portability proof: the gameport palette mirrors
- * the structure AsyncGlk's bundled dark.css uses (which Parchment ships
- * activated via [data-theme="dark"]), recolored crimson so it's visually
- * unmistakable next to nocturne. The sidebar runs slightly darker than
- * the gameport so the chrome reads as a frame around the play area.
  */
 
 @import "theme-base-dark.css";
 
 :root {
-  /* Plain Georgia override -- crimson text reads better against the
-     warmer Georgia silhouette than against the wider serif stack. */
-  --fb-font-serif: Georgia, "Iowan Old Style", serif;
   --fb-color-gameport-bg: #2a0a0a;
 
   /* AsyncGlk gameport palette. */
@@ -24,8 +12,6 @@
   --glkote-buffer-fg: #e8d8d8;
   --glkote-buffer-reverse-bg: #5a1a1a;
   --glkote-buffer-reverse-fg: #ffe8d0;
-  --glkote-buffer-line-height: 1.4;
-  --glkote-buffer-base-size: 16px;
   --glkote-grid-bg: #200808;
   --glkote-grid-fg: #e8d8d8;
   --glkote-input-fg: #f4a070;
