@@ -190,6 +190,14 @@ class PersistSession:
 
     async def input(self, msg: bytes) -> None:
         stdin = self._require_stdin()
+        # Newline-terminate every event we send. The RemGlk JSON protocol
+        # doesn't strictly require this — Plotkin's C RemGlk and AsyncGlk's
+        # TS RemGlk-mode GlkOte both parse incrementally without framing —
+        # but newline-delimited JSON is conventional for line-oriented stdio,
+        # and remglk-rs's standard.rs reader currently requires it. Cheap
+        # to add and defensive against any future strict line-reader.
+        if not msg.endswith(b'\n'):
+            msg = msg + b'\n'
         stdin.write(msg)
         await stdin.drain()
 
