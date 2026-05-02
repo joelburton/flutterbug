@@ -57,9 +57,28 @@ function open_websocket() {
     websocket.onmessage = callback_websocket_message;
 }
 
+/* Minimal Dialog impl for the PoC. AsyncGlk's full ProviderBasedBrowserDialog
+   drags in Svelte UI components that need esbuild-svelte to bundle (deferred);
+   this stub gets save/restore working with a plain window.prompt(). Good enough
+   to confirm the fileref-prompt path round-trips end to end. Polished UI is
+   a phase-3 (or later) item. */
+var SimpleDialog = {
+    async: true,
+    prompt: function (extension, is_write) {
+        return new Promise(function (resolve) {
+            var action = is_write ? 'Save as' : 'Load from';
+            var hint = '(.' + extension + ' will be appended)';
+            var name = window.prompt(action + ' ' + hint + ':');
+            if (!name) { resolve(null); return; }
+            resolve(name + '.' + extension);
+        });
+    },
+};
+
 function callback_websocket_open() {
     glkote.init({
         accept: accept,
+        Dialog: SimpleDialog,
     });
 }
 
@@ -231,17 +250,33 @@ function append_log_line(text) {
     feed.scrollTop(feed[0].scrollHeight);
 }
 
-/* Game-text size stepper. We mutate --glk-game-font-scale on documentElement;
-   the theme stylesheets multiply the buffer/grid font sizes by it via calc().
-   GlkOte's resize observer only fires on gameport size changes, so after
-   adjusting the scale we dispatch a window resize event to force it to
-   re-measure character metrics and emit a fresh arrange to the VM. */
+/* Game-text size stepper. flutterbug's themes use --glk-game-font-scale to
+   multiply --glk-buffer-font-size / --glk-grid-font-size — those names are
+   from Plotkin's GlkOte CSS. AsyncGlk's CSS uses different var names
+   (--glkote-buffer-size / --glkote-grid-size) so we additionally drive
+   *its* vars off the same scale here. The default AsyncGlk sizes from
+   asyncglk-css/core.css are 15px buffer / 14px grid; the themes can
+   override the bases via --glk-buffer-base-size etc. if they want a
+   different starting size. */
+var ASYNCGLK_BUFFER_BASE_PX = 15;
+var ASYNCGLK_GRID_BASE_PX = 14;
+var ASYNCGLK_GRID_LINE_HEIGHT_BASE_PX = 18;  /* matches asyncglk-css/core.css default */
+
 function apply_font_scale(scale) {
     if (isNaN(scale)) scale = 1;
     scale = Math.max(FONT_SCALE_MIN, Math.min(FONT_SCALE_MAX, scale));
     /* Snap to the step grid so persisted values stay tidy across reloads. */
     scale = Math.round(scale / FONT_SCALE_STEP) * FONT_SCALE_STEP;
-    document.documentElement.style.setProperty('--glk-game-font-scale', scale);
+    var root = document.documentElement;
+    root.style.setProperty('--glk-game-font-scale', scale);
+    /* AsyncGlk's CSS reads --glkote-buffer-size and --glkote-grid-size; bump
+       them so the buffer/grid windows resize alongside flutterbug's
+       --glk-game-font-scale. We also scale --glkote-grid-line-height (an
+       absolute px value, not a multiplier) so the status grid's row height
+       grows with the text rather than clipping a row to its old 18px. */
+    root.style.setProperty('--glkote-buffer-size', (ASYNCGLK_BUFFER_BASE_PX * scale) + 'px');
+    root.style.setProperty('--glkote-grid-size', (ASYNCGLK_GRID_BASE_PX * scale) + 'px');
+    root.style.setProperty('--glkote-grid-line-height', (ASYNCGLK_GRID_LINE_HEIGHT_BASE_PX * scale) + 'px');
     var label = document.getElementById('font-size-reset');
     if (label) label.textContent = Math.round(scale * 100) + '%';
     try { window.localStorage.setItem(FONT_SCALE_KEY, String(scale)); }

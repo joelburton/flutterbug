@@ -64,3 +64,6 @@ package-lock.json
 src/flutterbug_server/static/asyncglk.bundle.js
 src/flutterbug_server/static/asyncglk.bundle.js.map
 src/flutterbug_server/static/asyncglk-css/
+
+# Game save files (runtime artifacts in launch dir)
+*.glksave
