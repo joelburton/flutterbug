@@ -33,6 +33,10 @@
      --glkote-mono-family. Without this override they'd render in AsyncGlk's
      default Lucida Console instead of flutterbug's mono font. */
   --glkote-mono-family: var(--fb-font-mono);
+  /* Proportional (variable-width) font for buffer prose -- pointed at our
+     serif stack so game text matches the page's font choice instead of
+     AsyncGlk's default Lucida Bright. */
+  --glkote-prop-family: var(--fb-font-serif);
   /* Make reverse-video grid spans visually identical to normal spans
      (Plotkin's GlkOte didn't honor reverse-video on the grid, so /play
      always showed the flat status bar; matching that here for

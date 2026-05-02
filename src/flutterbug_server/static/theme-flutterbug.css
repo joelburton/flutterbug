@@ -14,13 +14,10 @@
   /* AsyncGlk gameport palette. */
   --glkote-buffer-bg: #fff8ef;
   --glkote-buffer-fg: #2f2417;
-  --glkote-buffer-line-height: 1.45;
-  --glkote-buffer-base-size: 18px;
   --glkote-buffer-reverse-bg: #2f2417;
   --glkote-buffer-reverse-fg: #fff8ef;
   --glkote-grid-bg: #f1dbc0;
   --glkote-grid-fg: #3a2d20;
-  --glkote-prop-family: var(--fb-font-serif);
   --glkote-input-fg: #4b1f12;
 
   /* Sidebar palette. */

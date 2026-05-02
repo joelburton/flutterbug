@@ -26,7 +26,6 @@
      black gameport rather than blending into it. */
   --glkote-grid-bg: #d0d0d0;
   --glkote-grid-fg: #1a1a1a;
-  --glkote-prop-family: var(--fb-font-serif);
   --glkote-input-fg: #82b9ff;
 
   /* Sidebar (right pane). */
