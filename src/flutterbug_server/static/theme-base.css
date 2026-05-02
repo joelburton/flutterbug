@@ -361,3 +361,17 @@ body.mode-fixed #gameport {
     height: var(--fb-mobile-feed-height);
   }
 }
+
+/* Force readable contrast on AsyncGlk's #errorpane regardless of the
+   active theme. AsyncGlk's CSS sets its background to --glkote-buffer-bg
+   (which is dark in dark themes) but inherits text color from body
+   (browser-default black) — black text on dark bg is illegible. We pin
+   both colors here to a high-contrast fallback so error messages remain
+   readable on every theme without each theme having to handle it. */
+#errorpane {
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+#errorpane div {
+  color: #000000 !important;
+}

@@ -28,7 +28,7 @@
 
   --glk-grid-bg: #111922;
   --glk-grid-text-color: #c2d2e2;
-  --glk-grid-font-family: "Iosevka Custom", "SFMono-Regular", Menlo, Consolas, monospace;
+  --glk-grid-font-family: var(--fb-font-mono);
   --glk-grid-font-size: calc(0.875rem * var(--glk-game-font-scale));
   --glk-grid-padding: 0.5rem 0.75rem 0.5rem 0.75rem;
 
@@ -55,9 +55,17 @@
   --glkote-grid-fg: var(--glk-grid-text-color);
   --glkote-grid-base-size: 14px;              /* matches --glk-grid-font-size at scale=1 */
   --glkote-grid-base-line-height: 18px;
-  --glkote-grid-reverse-bg: var(--glk-grid-text-color);
-  --glkote-grid-reverse-fg: var(--glk-grid-bg);
-  --glkote-grid-mono-family: var(--glk-grid-font-family);
+  /* Make reverse-video grid spans visually identical to normal spans
+     (Plotkin's GlkOte didn't honor reverse-video on the grid, so /play
+     always showed the flat dark status bar; matching that here for
+     consistency rather than rendering Inform 7's inverted-colors hint). */
+  --glkote-grid-reverse-bg: var(--glk-grid-bg);
+  --glkote-grid-reverse-fg: var(--glk-grid-text-color);
+  --glkote-grid-mono-family: var(--fb-font-mono);
+  /* AsyncGlk's buffer-window monospace runs (Style_preformatted, etc.)
+     use --glkote-mono-family. Without this override they'd render in
+     AsyncGlk's default Lucida Console instead of flutterbug's mono font. */
+  --glkote-mono-family: var(--fb-font-mono);
   --glkote-prop-family: var(--glk-buffer-font-family);
   --glkote-input-fg: var(--glk-style-input-color);
 
