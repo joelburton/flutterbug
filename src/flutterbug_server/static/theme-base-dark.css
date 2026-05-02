@@ -22,8 +22,10 @@
   --glkote-buffer-fg: #e0e0e0;
   --glkote-buffer-reverse-bg: #e0e0e0;
   --glkote-buffer-reverse-fg: #000000;
-  --glkote-grid-bg: #1a1a1a;
-  --glkote-grid-fg: #e0e0e0;
+  /* Inverted from the buffer so the game's status bar pops against the
+     black gameport rather than blending into it. */
+  --glkote-grid-bg: #d0d0d0;
+  --glkote-grid-fg: #1a1a1a;
   --glkote-prop-family: var(--fb-font-serif);
   --glkote-input-fg: #82b9ff;
 
