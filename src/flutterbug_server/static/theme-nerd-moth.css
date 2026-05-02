@@ -11,15 +11,14 @@
  * the right typeface on first paint.
  */
 
-@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,600;1,400&display=swap");
-@import "theme-base-dark.css";
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,600;1,400;1,600&display=swap');@import "theme-base-dark.css";
 
 :root {
   /* Override the dark-base serif so the buffer prose AND the chrome
      (sidebar text, brand, main page) all render in JetBrains Mono. The
      status grid and Style_preformatted runs keep --fb-font-mono
      (Iosevka) -- see comment at top. */
-  --fb-font-serif: "JetBrains Mono", ui-monospace, monospace;
+  --fb-font-serif: "IBM Plex Mono", ui-monospace, monospace;
 
   /* Phosphor palette. */
   --fb-color-gameport-bg: #000000;
