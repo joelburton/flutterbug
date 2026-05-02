@@ -273,7 +273,7 @@ function append_command(player: string | undefined, command: string | undefined)
     cmd.text(command || '')
     line.append(cmd)
     feed.append(line)
-    while (feed.children().length > 30) feed.children().first().remove()
+    while (feed.children().length > 2000) feed.children().first().remove()
     feed.scrollTop(feed[0].scrollHeight)
 }
 
@@ -288,7 +288,7 @@ function append_chat(player: string | undefined, color_class: string | undefined
     line.append(author)
     line.append(document.createTextNode(text || ''))
     feed.append(line)
-    while (feed.children().length > 100) feed.children().first().remove()
+    while (feed.children().length > 2000) feed.children().first().remove()
     feed.scrollTop(feed[0].scrollHeight)
 }
 
@@ -310,7 +310,7 @@ function append_log_line(text: string): void {
     const line = $('<div class="feed-line"></div>')
     line.text(text)
     feed.append(line)
-    while (feed.children().length > 30) feed.children().first().remove()
+    while (feed.children().length > 2000) feed.children().first().remove()
     feed.scrollTop(feed[0].scrollHeight)
 }
 
