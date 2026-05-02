@@ -1,11 +1,9 @@
 /*
  * Nocturne theme — cool slate, dark mode.
  *
- * Inherits universal defaults from theme-base.css and dark-mode shared
- * defaults (serif stack, player palette) from theme-base-dark.css. Only
- * the things that make this theme specifically "nocturne" live here:
- * the slate palette, a slightly wider sidebar with rounder edges, and a
- * couple of selector-based touches at the bottom.
+ * Inherits universal structural defaults (spacing, fonts, sizes) from
+ * theme-base.css and the dark-mode player palette from
+ * theme-base-dark.css. Only the slate palette lives here.
  */
 
 @import "theme-base-dark.css";
@@ -25,60 +23,25 @@
   --glkote-prop-family: var(--fb-font-serif);
   --glkote-input-fg: #ffd28c;
 
-  /* Sidebar runs slightly wider here to accommodate uppercase
-     letter-spacing on the h3 labels (see selector at the bottom). */
-  --fb-sidebar-width: clamp(14rem, 22vw, 18rem);
+  /* Sidebar palette. */
   --fb-sidebar-bg: #0d1218;
   --fb-sidebar-border: #283848;
   --fb-sidebar-text: #dbe4ee;
-
-  /* Brand block: rounder, slightly larger than the base default. */
-  --fb-brand-gap: 0.625rem;
-  --fb-brand-margin-y: 0.75rem;
-  --fb-brand-margin-x: 1rem;
-  --fb-brand-padding-bottom: 0.625rem;
   --fb-brand-divider: #243342;
-  --fb-brand-icon-size: 2.125rem;
-  --fb-brand-icon-radius: 999px;
-  --fb-brand-font-size: 1.375rem;
   --fb-brand-color: #f4d7a1;
-
-  --fb-h3-margin-top: 0.875rem;
-  --fb-h3-margin-x: 1rem;
-
-  --fb-status-margin-x: 1rem;
   --fb-status-color: #ffbb70;
-
-  --fb-players-margin-x: 1rem;
+  /* Section labels in a muted blue-grey to read as a quieter hierarchy
+     above the brighter sidebar text. */
+  --fb-h3-color: #7f98b1;
 
   /* Feed + chat palette. */
-  --fb-feed-margin-x: 1rem;
-  --fb-command-margin-bottom: 0.625rem;
-  --fb-feed-padding: 0.625rem;
   --fb-feed-border: #2a394a;
   --fb-feed-bg: #121a23;
-  --fb-feed-line-height: 1.42;
-  --fb-chat-row-margin-bottom: 0.75rem;
   --fb-chat-input-color: #e2edf8;
   --fb-chat-input-placeholder-color: #7f95aa;
   --fb-chat-input-border: #324559;
-  --fb-chat-input-radius: 0.5rem;
   --fb-chat-input-bg: #18212c;
   --fb-chat-send-color: #fff6e8;
   --fb-chat-send-border: #8e5d2d;
-  --fb-chat-send-radius: 0.5rem;
   --fb-chat-send-bg: #6a4727;
-}
-
-body.theme-nocturne #chat-input,
-body.theme-nocturne #chat-send,
-body.theme-nocturne #command-feed,
-body.theme-nocturne #chat-messages {
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
-}
-
-body.theme-nocturne #sidebar h3 {
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #7f98b1;
 }

@@ -11,6 +11,10 @@
 @import "theme-base.css";
 
 :root {
+  /* Section labels (h3) inherit the sidebar text color by default;
+     individual themes can override to a more muted/distinct hue. */
+  --fb-h3-color: var(--fb-sidebar-text);
+
   /* Player label colors. Hand-picked to be perceptually distinct AND
      legible on warm beige sidebar/feed backgrounds. Saturated and dark;
      each lands at roughly WCAG AA against a near-white background. */

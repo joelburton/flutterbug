@@ -247,6 +247,7 @@ body.mode-fixed #gameport {
 #sidebar h3 {
   margin: var(--fb-h3-margin-top) var(--fb-h3-margin-x) var(--fb-h3-margin-bottom) var(--fb-h3-margin-x);
   font-size: var(--fb-h3-size);
+  color: var(--fb-h3-color);
   display: flex;
   align-items: center;
   justify-content: space-between;
