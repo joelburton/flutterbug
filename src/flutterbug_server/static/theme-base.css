@@ -14,7 +14,7 @@
 
 :root {
   /* Universal fonts. Both stacks are the same across every theme; an
-     individual theme can still override (e.g. parchment-dark drops to
+     individual theme can still override (e.g. redrum drops to
      plain Georgia to match Parchment's default). */
   --fb-font-mono: "Iosevka Custom", "SFMono-Regular", Menlo, Consolas, monospace;
   --fb-font-serif: "Source Serif 4", "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, serif;

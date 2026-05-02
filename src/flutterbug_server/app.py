@@ -27,16 +27,19 @@ from .room import SharedRoom
 
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# Order here is the order shown in the main-page dropdown -- the build
+# context iterates this dict directly rather than sort()ing keys, so
+# rearrange entries to taste.
 AVAILABLE_THEMES = {
     'flutterbug': 'theme-flutterbug.css',
     'nocturne': 'theme-nocturne.css',
-    'parchment-dark': 'theme-parchment-dark.css',
-    # Diagnostic "themes" that load just one layer of the cascade so we can
-    # eyeball what each base contributes. Strip these once the layered
-    # theme system is settled.
-    'base-only': 'theme-base.css',
+    'redrum': 'theme-redrum.css',
     'light': 'theme-base-light.css',
     'dark': 'theme-base-dark.css',
+    # Diagnostic "theme" that loads just the structural CSS with no
+    # palette -- handy for eyeballing what theme-base.css alone provides.
+    # Strip once the layered theme system is settled.
+    'base-only': 'theme-base.css',
 }
 
 # Hostname suffixes for tunnel providers we ship support for. A signed-in
@@ -160,7 +163,7 @@ def create_app(settings) -> FastAPI:
     def build_main_context(sessionid):
         themes = [
             {'key': k, 'label': k.capitalize()}
-            for k in sorted(AVAILABLE_THEMES)
+            for k in AVAILABLE_THEMES
         ]
         return {
             'sessionid': sessionid,

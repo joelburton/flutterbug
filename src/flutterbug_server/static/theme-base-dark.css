@@ -6,7 +6,7 @@
  * and lives in theme-base.css; this file holds a complete plain palette
  * tuned for dark backgrounds. A theme that just `@import`s this file
  * will render as a usable dark UI; concrete themes (nocturne,
- * parchment-dark, etc.) override only the colors they want to recolor.
+ * redrum, etc.) override only the colors they want to recolor.
  *
  * Loaded transitively via @import; no theme should link this file
  * directly.

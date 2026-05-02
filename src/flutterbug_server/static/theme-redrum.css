@@ -1,24 +1,21 @@
 /*
- * Parchment-dark theme — crimson night, dark mode.
+ * Redrum theme — crimson night, dark mode.
  *
  * Inherits universal defaults from theme-base.css and dark-mode shared
  * defaults (serif stack, player palette) from theme-base-dark.css.
  *
- * The gameport palette here mirrors AsyncGlk's bundled dark.css (the
- * same palette Parchment activates via [data-theme="dark"]) but recolored
- * crimson so it's visually unmistakable next to nocturne when A/B
- * testing. Easy to flip back to Parchment's neutral grey once we want a
- * "true" Parchment-dark match.
- *
- * Sidebar uses flutterbug's own dark-grey rather than Parchment's
- * pitch-black, so the sidebar reads as part of the chrome rather than
- * an edge-to-edge black surface.
+ * Originally a Parchment-portability proof: the gameport palette mirrors
+ * the structure AsyncGlk's bundled dark.css uses (which Parchment ships
+ * activated via [data-theme="dark"]), recolored crimson so it's visually
+ * unmistakable next to nocturne. The sidebar runs slightly darker than
+ * the gameport so the chrome reads as a frame around the play area.
  */
 
 @import "theme-base-dark.css";
 
 :root {
-  /* Override the dark-base default with the simpler Parchment serif. */
+  /* Plain Georgia override -- crimson text reads better against the
+     warmer Georgia silhouette than against the wider serif stack. */
   --fb-font-serif: Georgia, "Iowan Old Style", serif;
   --fb-color-gameport-bg: #2a0a0a;
 
