@@ -1,7 +1,28 @@
 """IFDB title/author/cover lookup for the index page."""
 
+import html
+import re
 from logging import Logger
 from typing import Optional
+
+
+def _description_to_text(raw: Optional[str]) -> Optional[str]:
+    """IFDB descriptions may contain HTML (paragraphs, links, italics).
+    We render them on the main page as plain text so we don't have to
+    pull in an HTML sanitizer or trust third-party markup. Block-level
+    tags become newlines so paragraphs are preserved when the template
+    renders the result with white-space: pre-line."""
+    if not raw:
+        return None
+    s = re.sub(r'</(p|div|li)\s*>', '\n\n', raw, flags=re.I)
+    s = re.sub(r'<br\s*/?>', '\n', s, flags=re.I)
+    s = re.sub(r'<[^>]+>', '', s)
+    s = html.unescape(s)
+    s = re.sub(r'[ \t]+', ' ', s)
+    s = re.sub(r' *\n *', '\n', s)
+    s = re.sub(r'\n{3,}', '\n\n', s)
+    s = s.strip()
+    return s or None
 
 
 def lookup_story_metadata(story_path: Optional[str], log: Logger) -> Optional[dict]:
@@ -40,6 +61,9 @@ def lookup_story_metadata(story_path: Optional[str], log: Logger) -> Optional[di
     title = getattr(game, 'title', None)
     author = getattr(game, 'author', None)
     cover_art_url = getattr(game, 'cover_art_url', None)
+    description = _description_to_text(getattr(game, 'description', None))
+    ifdb_url = getattr(game, 'link', None)
+    first_published = getattr(game, 'first_published', None)
     if not title and not author and not cover_art_url:
         return None
 
@@ -48,5 +72,8 @@ def lookup_story_metadata(story_path: Optional[str], log: Logger) -> Optional[di
         'title': title,
         'author': author,
         'cover_art_url': cover_art_url,
+        'description': description,
+        'ifdb_url': ifdb_url,
+        'first_published': first_published,
         'ifid': ifid,
     }

@@ -141,8 +141,12 @@ input[type=submit]:active {
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
 	flex-shrink: 0;
 }
+.game-card-body {
+	min-width: 0;
+	flex: 1;
+}
 .game-card h2 {
-	margin: 0 0 8px;
+	margin: 0 0 6px;
 	font-size: 1.3em;
 	font-weight: bold;
 	letter-spacing: 0;
@@ -152,6 +156,27 @@ input[type=submit]:active {
 }
 .game-card p {
 	margin: 0;
+}
+.game-card-byline {
+	margin-bottom: 10px !important;
+}
+.game-card-description {
+	white-space: pre-line;
+	font-size: 0.95em;
+	line-height: 1.45;
+	margin-bottom: 10px !important;
+}
+.game-card-ifdb {
+	font-size: 0.9em;
+}
+.game-card-ifdb a {
+	color: var(--fb-brand-color, #2f3f56);
+	text-decoration: none;
+	border-bottom: 1px solid currentColor;
+	opacity: 0.85;
+}
+.game-card-ifdb a:hover {
+	opacity: 1;
 }
 .signed-in-row {
 	display: flex;
@@ -181,13 +206,25 @@ input[type=submit]:active {
  {% if game_info.cover_art_url %}
  <img src="{{ game_info.cover_art_url }}" alt="Cover art for {{ game_info.title or 'this game' }}">
  {% endif %}
- <div>
+ <div class="game-card-body">
   {% if game_info.title %}
   <h2>{{ game_info.title }}</h2>
   {% endif %}
-	{% if game_info.author %}
-	<p class="hint">By {{ game_info.author }}</p>
-	{% endif %}
+  {% if game_info.author or game_info.first_published %}
+  <p class="hint game-card-byline">
+   {% if game_info.author %}By {{ game_info.author }}{% endif %}
+   {% if game_info.author and game_info.first_published %} · {% endif %}
+   {% if game_info.first_published %}{{ game_info.first_published }}{% endif %}
+  </p>
+  {% endif %}
+  {% if game_info.description %}
+  <p class="game-card-description">{{ game_info.description }}</p>
+  {% endif %}
+  {% if game_info.ifdb_url %}
+  <p class="game-card-ifdb">
+   <a href="{{ game_info.ifdb_url }}" target="_blank" rel="noopener noreferrer">View on IFDB ↗</a>
+  </p>
+  {% endif %}
  </div>
  </div>
 </section>
