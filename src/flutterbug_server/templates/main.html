@@ -262,6 +262,18 @@ input[type=submit]:active {
 </main>
 
 <script type="text/javascript">
+/* Theme key -> CSS filename. The mapping lives on the server in
+   AVAILABLE_THEMES; this just mirrors it so the JS-driven theme swap
+   below knows which file to load. Keeping it on every page (signed-in
+   or not) lets the stored theme apply even on the sign-in screen. */
+var THEME_CSS = {
+{% for theme in themes %}
+	{{theme['key']|tojson}}: {{theme['css']|tojson}}{{ "," if not loop.last else "" }}
+{% endfor %}
+};
+var THEME_FALLBACK = {{ themes[0]['key']|tojson if themes else '"flutterbug"'|safe }};
+var ASSET_VERSION = {{ asset_version|tojson }};
+
 (function() {
 	var NAME_KEY = 'remoteif.playername';
 	var THEME_KEY = 'remoteif.theme';
@@ -294,12 +306,19 @@ input[type=submit]:active {
 	}
 
 	function loadTheme() {
+		var stored = '';
 		try {
-			return (localStorage.getItem(THEME_KEY) || 'flutterbug').trim();
+			stored = (localStorage.getItem(THEME_KEY) || '').trim();
 		}
 		catch (ex) {
-			return 'flutterbug';
+			stored = '';
 		}
+		/* Drop a stored value if the theme has since been removed/renamed --
+		   otherwise we'd try to load a 404'ing stylesheet. */
+		if (stored && Object.prototype.hasOwnProperty.call(THEME_CSS, stored)) {
+			return stored;
+		}
+		return THEME_FALLBACK;
 	}
 
 	function saveTheme(val) {
@@ -313,8 +332,10 @@ input[type=submit]:active {
 
 	function applyTheme(themeName) {
 		var themeLink = document.getElementById('theme-stylesheet');
-		if (themeLink) {
-			themeLink.href = '/static/theme-' + encodeURIComponent(themeName) + '.css';
+		if (!themeLink) return;
+		var css = THEME_CSS[themeName] || THEME_CSS[THEME_FALLBACK];
+		if (css) {
+			themeLink.href = '/static/' + css + '?v=' + encodeURIComponent(ASSET_VERSION);
 		}
 	}
 

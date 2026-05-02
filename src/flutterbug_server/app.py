@@ -32,14 +32,10 @@ MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 # rearrange entries to taste.
 AVAILABLE_THEMES = {
     'flutterbug': 'theme-flutterbug.css',
-    'nocturne': 'theme-nocturne.css',
     'redrum': 'theme-redrum.css',
+    'nocturne': 'theme-nocturne.css',
     'light': 'theme-base-light.css',
     'dark': 'theme-base-dark.css',
-    # Diagnostic "theme" that loads just the structural CSS with no
-    # palette -- handy for eyeballing what theme-base.css alone provides.
-    # Strip once the layered theme system is settled.
-    'base-only': 'theme-base.css',
 }
 
 # Hostname suffixes for tunnel providers we ship support for. A signed-in
@@ -162,8 +158,8 @@ def create_app(settings) -> FastAPI:
 
     def build_main_context(sessionid):
         themes = [
-            {'key': k, 'label': k.capitalize()}
-            for k in AVAILABLE_THEMES
+            {'key': k, 'label': k.capitalize(), 'css': v}
+            for k, v in AVAILABLE_THEMES.items()
         ]
         return {
             'sessionid': sessionid,
