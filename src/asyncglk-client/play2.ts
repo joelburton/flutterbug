@@ -492,6 +492,14 @@ $(document).ready(() => {
 
     $('#download-commands').on('click', download_commands)
     $('#download-chat').on('click', download_chat)
+
+    $('#sidebar-toggle').on('click', () => {
+        const open = document.body.classList.toggle('sidebar-open')
+        const btn = document.getElementById('sidebar-toggle')!
+        btn.setAttribute('aria-expanded', String(open))
+        btn.setAttribute('aria-label', open ? 'Hide sidebar' : 'Show sidebar')
+        btn.textContent = open ? '✕' : '☰'
+    })
     $('#chat-input').on('keydown', function (ev) {
         /* Plain Enter sends; Shift+Enter falls through to the textarea's
            default newline insertion. preventDefault is required because
