@@ -1,0 +1,95 @@
+/*
+ * Nerd Moth — green-on-black retro terminal theme.
+ *
+ * Built on theme-base-dark.css. The point is to feel like an early-80s
+ * monochrome CRT: phosphor green on jet black, square corners, every
+ * surface monospaced via Victor Mono... except the in-game status bar,
+ * which keeps Iosevka so the grid renders crisply at small sizes.
+ *
+ * Victor Mono is loaded straight from Google Fonts via @import. It
+ * arrives before the cascade runs, so Victor Mono assignments below
+ * resolve to the right typeface on first paint.
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=Victor+Mono:ital,wght@0,400;0,600;1,400&display=swap");
+@import "theme-base-dark.css";
+
+:root {
+  /* Override the dark-base serif so the buffer prose AND the chrome
+     (sidebar text, brand, main page) all render in Victor Mono. The
+     status grid and Style_preformatted runs keep --fb-font-mono
+     (Iosevka) -- see comment at top. */
+  --fb-font-serif: "Victor Mono", ui-monospace, monospace;
+
+  /* Phosphor palette. */
+  --fb-color-gameport-bg: #000000;
+  --glkote-buffer-bg: #000000;
+  --glkote-buffer-fg: #33ff66;
+  --glkote-buffer-reverse-bg: #33ff66;
+  --glkote-buffer-reverse-fg: #000000;
+  --glkote-grid-bg: #000000;
+  --glkote-grid-fg: #88ffaa;
+  --glkote-input-fg: #aaffaa;
+
+  /* Sidebar / chrome. */
+  --fb-sidebar-bg: #000000;
+  --fb-sidebar-border: #00aa44;
+  --fb-sidebar-text: #33ff66;
+  --fb-brand-divider: #00aa44;
+  --fb-brand-color: #aaffaa;
+  --fb-h3-color: #88ffaa;
+
+  /* Multiplayer status banner. */
+  --fb-status-color: #aaffaa;
+  --fb-status-bg: #001a0a;
+
+  /* Commands feed + chat panels. */
+  --fb-feed-border: #00aa44;
+  --fb-feed-bg: #000000;
+
+  /* Chat input row. */
+  --fb-chat-input-color: #33ff66;
+  --fb-chat-input-placeholder-color: #007733;
+  --fb-chat-input-border: #00aa44;
+  --fb-chat-input-bg: #000000;
+  --fb-chat-send-color: #aaffaa;
+  --fb-chat-send-border: #33ff66;
+  --fb-chat-send-bg: #002211;
+
+  /* Player labels — pick eight CRT-friendly tints rather than the
+     light/dark mode pastels, so player names read as glowing accents
+     against the black. */
+  --fb-player-color-1: #ff8855; /* amber */
+  --fb-player-color-2: #88ddff; /* sky */
+  --fb-player-color-3: #aaff66; /* lime */
+  --fb-player-color-4: #ff77cc; /* magenta */
+  --fb-player-color-5: #ffdd66; /* yellow */
+  --fb-player-color-6: #66ffee; /* cyan */
+  --fb-player-color-7: #ddaaff; /* lavender */
+  --fb-player-color-8: #ffffff; /* white */
+  --fb-player-fallback-color: #88ffaa;
+
+  /* Square corners everywhere. */
+  --fb-brand-icon-radius: 0;
+  --fb-chat-input-radius: 0;
+  --fb-chat-send-radius: 0;
+  --fb-status-radius: 0;
+}
+
+/* Subtle CRT bloom on every glowing element -- one shadow on the body
+   inherits to descendants via currentColor, which gives the right
+   color halo per text run (chat color, status color, etc.) without
+   per-selector tuning. */
+body.theme-nerd-moth {
+  text-shadow: 0 0 1px currentColor;
+}
+
+/* The butterfly photo doesn't fit a phosphor terminal; flatten it to
+   monochrome green so it reads as a stylized icon rather than a JPEG.
+   Filter chain: drop saturation, push contrast up, then tint via
+   sepia + hue-rotate. The numbers are picked by eye -- if the icon
+   ever changes, retune. */
+body.theme-nerd-moth .brand img,
+body.theme-nerd-moth #brand img {
+  filter: grayscale(1) contrast(1.4) brightness(0.9) sepia(1) hue-rotate(60deg) saturate(8);
+}
