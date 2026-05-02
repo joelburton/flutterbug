@@ -1,9 +1,101 @@
 /*
- * Shared play-page shell styles.
+ * Shared play-page shell styles + universal variable defaults.
  *
- * This file defines the structural sidebar/gameport layout and reads only from
- * the --fb-* variables supplied by the selected theme stylesheet.
+ * This file is the bottom of the theme cascade. It is reached transitively
+ * via @import: theme-<name>.css → theme-base-<mode>.css → theme-base.css.
+ * Anything that varies by light/dark goes in theme-base-{light,dark}.css;
+ * anything that varies by individual theme stays in theme-<name>.css.
+ *
+ * The :root block below holds defaults that hold for every theme today
+ * (font stack, AsyncGlk grid metrics, common chrome spacing, font sizes).
+ * Themes can override any of these. The structural selectors below the
+ * :root block consume --fb-* variables and don't define any.
  */
+
+:root {
+  /* Universal fonts -- mono is the same across every theme. The serif
+     stack is mode-specific (defined in theme-base-{light,dark}.css). */
+  --fb-font-mono: "Iosevka Custom", "SFMono-Regular", Menlo, Consolas, monospace;
+
+  /* Multiplier the in-app A−/A+ stepper writes onto documentElement.
+     play2.ts reads it back to compute --glkote-buffer-size /
+     --glkote-grid-size / --glkote-grid-line-height. */
+  --fb-game-font-scale: 1;
+
+  /* AsyncGlk grid metrics. The base sizes are read by play2.ts and
+     multiplied by --fb-game-font-scale on each font-stepper change. */
+  --glkote-grid-base-size: 14px;
+  --glkote-grid-base-line-height: 18px;
+  --glkote-grid-mono-family: var(--fb-font-mono);
+  /* AsyncGlk's buffer-window monospace runs (Style_preformatted, etc.) use
+     --glkote-mono-family. Without this override they'd render in AsyncGlk's
+     default Lucida Console instead of flutterbug's mono font. */
+  --glkote-mono-family: var(--fb-font-mono);
+  /* Make reverse-video grid spans visually identical to normal spans
+     (Plotkin's GlkOte didn't honor reverse-video on the grid, so /play
+     always showed the flat status bar; matching that here for
+     consistency rather than rendering Inform 7's inverted-colors hint). */
+  --glkote-grid-reverse-bg: var(--glkote-grid-bg);
+  --glkote-grid-reverse-fg: var(--glkote-grid-fg);
+
+  /* Sidebar width. clamp() so the sidebar shares space sensibly at all
+     zoom levels: the 13rem floor keeps the chat input usable, 22vw lets
+     it grow with wide viewports, 17rem caps it on huge displays. */
+  --fb-sidebar-width: clamp(13rem, 22vw, 17rem);
+
+  /* Brand block (logo + product name at the top of the sidebar). */
+  --fb-brand-gap: 0.5rem;
+  --fb-brand-margin-y: 0.625rem;
+  --fb-brand-margin-x: 0.875rem;
+  --fb-brand-padding-bottom: 0.5rem;
+  --fb-brand-icon-size: 2rem;
+  --fb-brand-icon-radius: 0.375rem;
+  --fb-brand-font-size: 1.25rem;
+
+  /* Section labels ("Recent Commands", "Chat", ...). */
+  --fb-h3-margin-top: 0.75rem;
+  --fb-h3-margin-x: 0.875rem;
+  --fb-h3-margin-bottom: 0.5rem;
+  --fb-h3-size: 0.8125rem;
+
+  /* "Players currently here" status line under the brand. */
+  --fb-status-margin-top: 0.5rem;
+  --fb-status-margin-x: 0.875rem;
+  --fb-status-margin-bottom: 0.375rem;
+  --fb-status-size: 0.75rem;
+  --fb-status-min-height: 1rem;
+
+  /* Player label list. */
+  --fb-players-margin-x: 0.875rem;
+
+  /* Recent-commands and chat-message scroll panels. */
+  --fb-feed-margin-x: 0.875rem;
+  --fb-command-margin-bottom: 0.5rem;
+  --fb-chat-margin-bottom: 0.375rem;
+  --fb-feed-padding: 0.5rem;
+  --fb-feed-line-font-size: 0.8125rem;
+  --fb-feed-line-height: 1.4;
+  --fb-feed-line-margin-bottom: 0.375rem;
+
+  /* Chat input row (text field + Send button). */
+  --fb-chat-row-margin-bottom: 0.625rem;
+  --fb-chat-row-gap: 0.375rem;
+  --fb-chat-input-font-size: 0.8125rem;
+  --fb-chat-input-padding-y: 0.375rem;
+  --fb-chat-input-padding-x: 0.5rem;
+  --fb-chat-input-radius: 0.375rem;
+  --fb-chat-send-font-size: 0.75rem;
+  --fb-chat-send-padding-y: 0.375rem;
+  --fb-chat-send-padding-x: 0.625rem;
+  --fb-chat-send-radius: 0.375rem;
+
+  /* Mobile layout (sidebar collapses below the gameport). The breakpoint
+     itself is the literal 660px in the @media query below; CSS custom
+     properties can't be used inside @media queries. */
+  --fb-mobile-breakpoint: 660px;
+  --fb-mobile-sidebar-height: 11.875rem;
+  --fb-mobile-feed-height: 3.375rem;
+}
 
 body {
   margin: 0px;

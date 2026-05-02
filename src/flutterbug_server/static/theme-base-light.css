@@ -1,0 +1,28 @@
+/*
+ * Light-mode theme defaults.
+ *
+ * Sits between theme-base.css and an individual light theme. Holds the
+ * vars that vary by mode (light vs dark) but are typically shared across
+ * light themes — the serif stack, player palette tuned for light
+ * backgrounds, etc. Loaded transitively via @import; no theme should
+ * link this file directly.
+ */
+
+@import "theme-base.css";
+
+:root {
+  --fb-font-serif: "Source Serif 4", Georgia, serif;
+
+  /* Player label colors. Hand-picked to be perceptually distinct AND
+     legible on warm beige sidebar/feed backgrounds. Saturated and dark;
+     each lands at roughly WCAG AA against a near-white background. */
+  --fb-player-color-1: #a3281c; /* deep red */
+  --fb-player-color-2: #1f4f9e; /* royal blue */
+  --fb-player-color-3: #1e6d3a; /* forest green */
+  --fb-player-color-4: #6b2c87; /* purple */
+  --fb-player-color-5: #a05920; /* burnt orange */
+  --fb-player-color-6: #106d75; /* teal */
+  --fb-player-color-7: #7a1f3d; /* wine */
+  --fb-player-color-8: #3d3a36; /* charcoal */
+  --fb-player-fallback-color: #555;
+}

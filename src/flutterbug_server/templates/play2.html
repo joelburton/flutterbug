@@ -8,11 +8,13 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
 <link rel="stylesheet" href="/static/fonts.css?v={{ asset_version }}" type="text/css">
-<!-- AsyncGlk's web GlkOte CSS in place of Plotkin's glkote.css. -->
+<!-- AsyncGlk's web GlkOte CSS in place of Plotkin's glkote.css. AsyncGlk's
+     own light.css/dark.css aren't included: every var they set is already
+     supplied by the flutterbug theme cascade below, so they'd be dead weight. -->
 <link rel="stylesheet" href="/static/asyncglk-css/glkote.css?v={{ asset_version }}" type="text/css">
-<link rel="stylesheet" href="/static/asyncglk-css/light.css?v={{ asset_version }}" type="text/css">
 <link rel="stylesheet" href="/static/dialog.css?v={{ asset_version }}" type="text/css">
-<link rel="stylesheet" href="/static/theme-base.css?v={{ asset_version }}" type="text/css">
+<!-- Selected theme CSS. Pulls in theme-base-{light,dark}.css and
+     theme-base.css transitively via @import -- one link, full cascade. -->
 <link rel="stylesheet" href="/static/{{ theme_css }}?v={{ asset_version }}" type="text/css">
 
 <script type="text/javascript">

@@ -1,0 +1,29 @@
+/*
+ * Dark-mode theme defaults.
+ *
+ * Sits between theme-base.css and an individual dark theme. Holds the
+ * vars that vary by mode (light vs dark) but are typically shared across
+ * dark themes — the serif stack, player palette tuned for dark
+ * backgrounds, etc. Loaded transitively via @import; no theme should
+ * link this file directly.
+ */
+
+@import "theme-base.css";
+
+:root {
+  --fb-font-serif: "Source Serif 4", "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, serif;
+
+  /* Player label colors. Hand-picked to be perceptually distinct AND
+     legible on near-black sidebar/feed backgrounds. Light and saturated
+     -- pastels read better against very dark backgrounds than the deep
+     hues that work for the light palette. */
+  --fb-player-color-1: #ff8a7a; /* coral */
+  --fb-player-color-2: #82b9ff; /* sky blue */
+  --fb-player-color-3: #7ed8a4; /* mint green */
+  --fb-player-color-4: #c89cf0; /* lavender */
+  --fb-player-color-5: #f4c177; /* amber */
+  --fb-player-color-6: #7be3e8; /* cyan */
+  --fb-player-color-7: #f292c0; /* pink */
+  --fb-player-color-8: #b4bcc6; /* light grey */
+  --fb-player-fallback-color: #9bb0c5;
+}
