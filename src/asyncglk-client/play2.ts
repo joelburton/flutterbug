@@ -432,14 +432,22 @@ function update_status(message: string): void {
     el.text(message); el.show()
 }
 
-function focus_game_input(): void {
-    const el = $('#windowport input[type=text]:visible, #windowport textarea:visible').first()
-    if (el.length) el.focus()
+/* Find the game's currently-accepting input. AsyncGlk creates one
+   <textarea class="Input"> per window (input.ts), parks it off-screen
+   (input.css gives it left: -10000px, width: 5px), and toggles
+   disabled=true between accepting prompts. .focus() is a no-op on a
+   disabled element, so :not([disabled]) is what makes "go to the game
+   input" actually work. The :visible filter would have matched the
+   off-screen one too -- jQuery's :visible only checks dimensions and
+   display, not viewport position. */
+function active_game_input(): HTMLElement | null {
+    const el = $('#windowport textarea:not([disabled]), #windowport input[type=text]:not([disabled])').first()
+    return el.length ? (el[0] as HTMLElement) : null
 }
 
-function active_game_input(): HTMLElement | null {
-    const el = $('#windowport input[type=text]:visible, #windowport textarea:visible').first()
-    return el.length ? (el[0] as HTMLElement) : null
+function focus_game_input(): void {
+    const el = active_game_input()
+    if (el) el.focus()
 }
 
 // ---------------------------------------------------------------------------
