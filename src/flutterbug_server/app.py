@@ -31,6 +31,12 @@ AVAILABLE_THEMES = {
     'flutterbug': 'theme-flutterbug.css',
     'nocturne': 'theme-nocturne.css',
     'parchment-dark': 'theme-parchment-dark.css',
+    # Diagnostic "themes" that load just one layer of the cascade so we can
+    # eyeball what each base contributes. Strip these once the layered
+    # theme system is settled.
+    'base-only': 'theme-base.css',
+    'light': 'theme-base-light.css',
+    'dark': 'theme-base-dark.css',
 }
 
 # Hostname suffixes for tunnel providers we ship support for. A signed-in
