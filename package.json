@@ -6,12 +6,15 @@
   "type": "module",
   "scripts": {
     "build": "npm run build:js && npm run build:css",
-    "build:js": "esbuild src/asyncglk-client/entry.js --bundle --format=iife --global-name=AsyncGlk --outfile=src/flutterbug_server/static/asyncglk.bundle.js",
+    "build:js": "esbuild src/asyncglk-client/play2.ts --bundle --format=iife --outfile=src/flutterbug_server/static/play2.bundle.js",
     "build:css": "mkdir -p src/flutterbug_server/static/asyncglk-css && cp node_modules/asyncglk/src/glkote/web/*.css src/flutterbug_server/static/asyncglk-css/",
-    "build:watch": "npm run build:js -- --watch"
+    "build:watch": "npm run build:js -- --watch",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@types/jquery": "^4.0.0",
     "asyncglk": "file:../../vms-project/asyncglk",
-    "esbuild": "^0.25.0"
+    "esbuild": "^0.25.0",
+    "typescript": "~5.9.0"
   }
 }

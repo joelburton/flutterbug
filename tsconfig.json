@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    /* Modern browser target. esbuild handles the actual transpile/bundling;
+       tsc is here for `npm run typecheck` only (--noEmit). */
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+
+    /* AsyncGlk's package.json doesn't declare an "exports" field; we import
+       from explicit dist paths and let TS find the corresponding .d.ts. */
+    "allowJs": false,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "useDefineForClassFields": true,
+
+    /* Type-check strictness. Start lenient — this is a PoC and most of the
+       initial code is mechanical conversion from JS where types weren't
+       written down. We can tighten ratchet by ratchet. */
+    "strict": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src/asyncglk-client/**/*.ts"]
+}
