@@ -371,7 +371,7 @@ def main():
 
     if args.secret is None:
         args.secret = secrets.token_hex(32)
-        log.warning(
+        log.info(
             'No --secret provided; users will need to sign in again if '
             'the server restarts.')
 
@@ -392,6 +392,11 @@ def main():
     tunnel_url_event: threading.Event | None = None
     tunnel_banner_done: threading.Event | None = None
     if args.tunnel:
+        log.warning(
+            'As of 2026-05-02, localhost.run tunnels have been unreliable '
+            '— the service may be having problems. If the tunnel '
+            'fails to come up or DNS never propagates, try --cloudflare '
+            'instead.')
         tunnel_name = 'localhost.run'
         tunnel_banner_done = threading.Event()
         tunnel_proc, tunnel_url_holder, tunnel_url_event = (
