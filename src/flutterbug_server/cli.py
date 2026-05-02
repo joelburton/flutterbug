@@ -53,6 +53,7 @@ def _start_tunnel(
     url_re: re.Pattern,
     log: logging.Logger,
     missing_msg: str,
+    banner_done: threading.Event | None = None,
 ):
     """Spawn a tunnel subprocess and watch its output for the public URL.
 
@@ -100,6 +101,8 @@ def _start_tunnel(
         log.info('  Public tunnel URL: %s', url_holder['url'])
         log.info('  Share this with friends to play together.')
         log.info('=' * 72)
+        if banner_done is not None:
+            banner_done.set()
 
     def banner_thread():
         # Defer the user-facing banner until the provider's connect
@@ -142,7 +145,9 @@ def _start_tunnel(
     return proc, url_holder, url_event
 
 
-def _start_localhostrun_tunnel(port: int, log: logging.Logger):
+def _start_localhostrun_tunnel(
+        port: int, log: logging.Logger,
+        banner_done: threading.Event | None = None):
     """Open an ssh reverse tunnel to localhost.run (no account required).
 
     ServerAliveInterval=60 is localhost.run's documented keepalive
@@ -167,10 +172,13 @@ def _start_localhostrun_tunnel(port: int, log: logging.Logger):
         ],
         _LOCALHOSTRUN_URL_RE,
         log,
-        "ssh not found on PATH. Install OpenSSH and try again.")
+        "ssh not found on PATH. Install OpenSSH and try again.",
+        banner_done=banner_done)
 
 
-def _start_cloudflared_tunnel(port: int, log: logging.Logger):
+def _start_cloudflared_tunnel(
+        port: int, log: logging.Logger,
+        banner_done: threading.Event | None = None):
     """Spawn ``cloudflared tunnel --url http://localhost:PORT``."""
     return _start_tunnel(
         'cloudflared',
@@ -178,7 +186,8 @@ def _start_cloudflared_tunnel(port: int, log: logging.Logger):
         _CLOUDFLARED_URL_RE,
         log,
         "cloudflared not found on PATH. Install it (e.g. "
-        "'brew install cloudflared') and try again.")
+        "'brew install cloudflared') and try again.",
+        banner_done=banner_done)
 
 
 def _wait_for_tunnel_dns(url: str, log: logging.Logger, timeout: float = 30.0) -> bool:
@@ -381,14 +390,17 @@ def main():
     tunnel_name = None
     tunnel_url_holder: dict = {'url': None}
     tunnel_url_event: threading.Event | None = None
+    tunnel_banner_done: threading.Event | None = None
     if args.tunnel:
         tunnel_name = 'localhost.run'
+        tunnel_banner_done = threading.Event()
         tunnel_proc, tunnel_url_holder, tunnel_url_event = (
-            _start_localhostrun_tunnel(args.port, log))
+            _start_localhostrun_tunnel(args.port, log, tunnel_banner_done))
     elif args.cloudflare:
         tunnel_name = 'cloudflared'
+        tunnel_banner_done = threading.Event()
         tunnel_proc, tunnel_url_holder, tunnel_url_event = (
-            _start_cloudflared_tunnel(args.port, log))
+            _start_cloudflared_tunnel(args.port, log, tunnel_banner_done))
 
     tunnel_failed = threading.Event()
 
@@ -417,6 +429,8 @@ def main():
                         # Safari's first lookup may NXDOMAIN and macOS's
                         # mDNSResponder caches that negative answer.
                         url = tunnel_url_holder['url']
+                        if tunnel_banner_done is not None:
+                            tunnel_banner_done.wait(timeout=15.0)
                         log.info(
                             'Waiting 3 seconds for tunnel DNS to propagate '
                             'before opening browser.')
