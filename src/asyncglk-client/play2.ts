@@ -318,21 +318,18 @@ function append_log_line(text: string): void {
 // Game-text size stepper
 // ---------------------------------------------------------------------------
 
-/* flutterbug's themes use --glk-game-font-scale to multiply
-   --glk-buffer-font-size / --glk-grid-font-size — those names are from
-   Plotkin's GlkOte CSS. AsyncGlk's CSS uses different var names
-   (--glkote-buffer-size / --glkote-grid-size) so we additionally drive
-   *its* vars off the same scale here. We also scale
-   --glkote-grid-line-height (absolute px, not a multiplier) so the status
-   grid's row height grows with the text rather than clipping a row to
-   its old 18px. */
+/* AsyncGlk's CSS exposes absolute px sizes (--glkote-buffer-size /
+   --glkote-grid-size / --glkote-grid-line-height), not a multiplier, so we
+   compute the scaled values in JS off each theme's --glkote-*-base-size
+   vars. --fb-game-font-scale is also stored on documentElement so the
+   stepper can read its own state back via getComputedStyle. */
 function apply_font_scale(scale: number): number {
     if (isNaN(scale)) scale = 1
     scale = Math.max(FONT_SCALE_MIN, Math.min(FONT_SCALE_MAX, scale))
     /* Snap to the step grid so persisted values stay tidy across reloads. */
     scale = Math.round(scale / FONT_SCALE_STEP) * FONT_SCALE_STEP
     const root = document.documentElement
-    root.style.setProperty('--glk-game-font-scale', String(scale))
+    root.style.setProperty('--fb-game-font-scale', String(scale))
     /* Per-theme bases via CSS vars; fall back to AsyncGlk defaults so the
        page still works without a flutterbug theme loaded. */
     const buffer_base = read_px_var('--glkote-buffer-base-size', ASYNCGLK_BUFFER_BASE_PX)
@@ -350,7 +347,7 @@ function apply_font_scale(scale: number): number {
 }
 
 function current_font_scale(): number {
-    const raw = getComputedStyle(document.documentElement).getPropertyValue('--glk-game-font-scale')
+    const raw = getComputedStyle(document.documentElement).getPropertyValue('--fb-game-font-scale')
     const val = parseFloat(raw)
     return isNaN(val) ? 1 : val
 }

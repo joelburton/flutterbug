@@ -1,20 +1,17 @@
 /*
  * Parchment-dark theme for flutterbug.
  *
- * The game-area palette (—glkote-* vars) is lifted verbatim from
+ * The game-area palette (--glkote-* vars) is lifted verbatim from
  * AsyncGlk's bundled dark.css — the same palette Parchment activates via
  * documentElement[data-theme="dark"]. Lifting as a :root block instead
  * of using the data-theme selector means we don't need the boot-time
  * setAttribute Parchment uses; the theme is selected by the standard
  * flutterbug ?theme=... query param.
  *
- * The sidebar palette (—fb-* vars) is hand-tuned to harmonize with the
+ * The sidebar palette (--fb-* vars) is hand-tuned to harmonize with the
  * dark game area — flutterbug's own dark-grey rather than Parchment's
  * pitch-black, so the sidebar reads as part of the chrome rather than
  * an edge-to-edge black surface.
- *
- * Sizes use the same calc()-on--glk-game-font-scale pattern as the
- * other themes so the in-app A−/A+ stepper continues to work.
  */
 
 :root {
@@ -25,30 +22,7 @@
      once we want a "true" Parchment-dark match. */
   --fb-color-gameport-bg: #2a0a0a;
 
-  --glk-game-font-scale: 1;
-
-  /* --glk-* — for the legacy /play (Plotkin GlkOte) path */
-  --glk-window-bg: #2a0a0a;
-  --glk-buffer-text-color: #e8d8d8;
-  --glk-buffer-font-family: Georgia, "Iowan Old Style", serif;
-  --glk-buffer-font-size: calc(1rem * var(--glk-game-font-scale));
-  --glk-buffer-line-height: 1.4;
-  --glk-buffer-padding: 0.5rem 0.75rem 0.5rem 0.75rem;
-
-  --glk-grid-bg: #200808;
-  --glk-grid-text-color: #e8d8d8;
-  --glk-grid-font-family: var(--fb-font-mono);
-  --glk-grid-font-size: calc(0.875rem * var(--glk-game-font-scale));
-  --glk-grid-padding: 0.375rem 0.625rem 0.375rem 0.625rem;
-
-  --glk-moreprompt-bg: #6a1a1a;
-  --glk-moreprompt-color: #ffe8d0;
-  --glk-moreprompt-opacity: 0.9;
-  --glk-moreprompt-radius: 0.25rem;
-  --glk-previousmark-bg: #4a1a1a;
-  --glk-graphics-bg: #2a0a0a;
-  --glk-style-blockquote-bg: #3a1212;
-  --glk-style-input-color: #f4a070;
+  --fb-game-font-scale: 1;
 
   /* --glkote-* — Parchment-compatible structure, recolored crimson so it's
      obviously distinct from nocturne when A/B testing. */
@@ -56,14 +30,14 @@
   --glkote-buffer-fg: #e8d8d8;
   --glkote-buffer-reverse-bg: #5a1a1a;
   --glkote-buffer-reverse-fg: #ffe8d0;
-  --glkote-buffer-line-height: var(--glk-buffer-line-height);
+  --glkote-buffer-line-height: 1.4;
   --glkote-buffer-base-size: 16px;
   --glkote-grid-bg: #200808;
   --glkote-grid-fg: #e8d8d8;
   /* Make reverse-video grid spans visually identical to normal spans
      (matches Plotkin's GlkOte behavior where the grid bg never inverted). */
-  --glkote-grid-reverse-bg: var(--glk-grid-bg);
-  --glkote-grid-reverse-fg: var(--glk-grid-text-color);
+  --glkote-grid-reverse-bg: var(--glkote-grid-bg);
+  --glkote-grid-reverse-fg: var(--glkote-grid-fg);
   --glkote-grid-base-size: 14px;
   --glkote-grid-base-line-height: 18px;
   --glkote-grid-mono-family: var(--fb-font-mono);
@@ -71,7 +45,7 @@
      use --glkote-mono-family. Without this override they'd render in
      AsyncGlk's default Lucida Console instead of flutterbug's mono font. */
   --glkote-mono-family: var(--fb-font-mono);
-  --glkote-prop-family: var(--glk-buffer-font-family);
+  --glkote-prop-family: Georgia, "Iowan Old Style", serif;
   --glkote-input-fg: #f4a070;
   --glkote-page-bg: #2a0a0a;
 
