@@ -1,0 +1,15 @@
+{
+  "name": "flutterbug-client",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Build tooling for flutterbug's browser-side JS (AsyncGlk PoC).",
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/asyncglk-client/entry.js --bundle --format=iife --global-name=AsyncGlk --outfile=src/flutterbug_server/static/asyncglk.bundle.js",
+    "build:watch": "npm run build -- --watch"
+  },
+  "devDependencies": {
+    "asyncglk": "file:../../vms-project/asyncglk",
+    "esbuild": "^0.25.0"
+  }
+}

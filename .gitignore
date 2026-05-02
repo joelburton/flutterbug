@@ -57,3 +57,9 @@ CLAUDE.md
 
 # Working code-review notes
 review-*.md
+
+# Node / npm (AsyncGlk PoC)
+node_modules/
+package-lock.json
+src/flutterbug_server/static/asyncglk.bundle.js
+src/flutterbug_server/static/asyncglk.bundle.js.map
