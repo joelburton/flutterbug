@@ -477,7 +477,6 @@ $(document).ready(() => {
     $('#font-size-up').on('click', () => apply_font_scale(current_font_scale() + FONT_SCALE_STEP))
     $('#font-size-reset').on('click', () => apply_font_scale(1))
 
-    $('#chat-send').on('click', send_chat)
     $('#download-commands').on('click', download_commands)
     $('#download-chat').on('click', download_chat)
     $('#chat-input').on('keydown', function (ev) {
@@ -513,9 +512,8 @@ $(document).ready(() => {
         }
     }, /* useCapture = */ true)
 
-    /* Used when chat input is escaped or the chat-send button is hit and the
-       user wants to return to typing in the game window. Defined out here as
-       a function rather than inline so #chat-input's keydown handler can
-       call it. */
+    /* Used when chat input is escaped and the user wants to return to
+       typing in the game window. Defined out here as a function rather
+       than inline so #chat-input's keydown handler can call it. */
     void focus_game_input  // keep linters from flagging it as unused
 })

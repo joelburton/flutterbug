@@ -436,18 +436,10 @@ body.mode-fixed #gameport {
   color: var(--fb-chat-input-placeholder-color);
 }
 
-#chat-send {
-  flex: 0 0 auto;
-  box-sizing: border-box;
-  font-size: var(--fb-chat-send-font-size);
-  color: var(--fb-chat-send-color);
-  padding: var(--fb-chat-send-padding-y) var(--fb-chat-send-padding-x);
-  border: 1px solid var(--fb-chat-send-border);
-  border-radius: var(--fb-chat-send-radius);
-  background: var(--fb-chat-send-bg);
-  cursor: pointer;
-  white-space: nowrap;
-}
+/* The play page's chat input no longer has a Send button (Enter does
+   the work). The --fb-chat-send-* vars survive because main.html's
+   secondary submit buttons (Sign In, Sign Out) still consume them as
+   the "secondary action" palette. */
 
 .feed-line {
   font-size: var(--fb-feed-line-font-size);
