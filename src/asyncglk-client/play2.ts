@@ -42,12 +42,18 @@ const FONT_SCALE_MIN = 0.7
 const FONT_SCALE_MAX = 2.0
 const FONT_SCALE_STEP = 0.125
 
-// AsyncGlk's CSS uses --glkote-buffer-size / --glkote-grid-size /
-// --glkote-grid-line-height (the line-height is an absolute px, not a
-// multiplier). Default sizes come from asyncglk-css/core.css.
+// Fallbacks if the active theme doesn't set a per-theme base. Themes
+// override via --glkote-buffer-base-size / --glkote-grid-base-size /
+// --glkote-grid-base-line-height. Defaults match asyncglk-css/core.css.
 const ASYNCGLK_BUFFER_BASE_PX = 15
 const ASYNCGLK_GRID_BASE_PX = 14
 const ASYNCGLK_GRID_LINE_HEIGHT_BASE_PX = 18
+
+function read_px_var(name: string, fallback: number): number {
+    const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+    const val = parseFloat(raw)
+    return isNaN(val) ? fallback : val
+}
 
 // ---------------------------------------------------------------------------
 // Websocket round-trip
@@ -287,9 +293,14 @@ function apply_font_scale(scale: number): number {
     scale = Math.round(scale / FONT_SCALE_STEP) * FONT_SCALE_STEP
     const root = document.documentElement
     root.style.setProperty('--glk-game-font-scale', String(scale))
-    root.style.setProperty('--glkote-buffer-size', (ASYNCGLK_BUFFER_BASE_PX * scale) + 'px')
-    root.style.setProperty('--glkote-grid-size', (ASYNCGLK_GRID_BASE_PX * scale) + 'px')
-    root.style.setProperty('--glkote-grid-line-height', (ASYNCGLK_GRID_LINE_HEIGHT_BASE_PX * scale) + 'px')
+    /* Per-theme bases via CSS vars; fall back to AsyncGlk defaults so the
+       page still works without a flutterbug theme loaded. */
+    const buffer_base = read_px_var('--glkote-buffer-base-size', ASYNCGLK_BUFFER_BASE_PX)
+    const grid_base = read_px_var('--glkote-grid-base-size', ASYNCGLK_GRID_BASE_PX)
+    const grid_lh_base = read_px_var('--glkote-grid-base-line-height', ASYNCGLK_GRID_LINE_HEIGHT_BASE_PX)
+    root.style.setProperty('--glkote-buffer-size', (buffer_base * scale) + 'px')
+    root.style.setProperty('--glkote-grid-size', (grid_base * scale) + 'px')
+    root.style.setProperty('--glkote-grid-line-height', (grid_lh_base * scale) + 'px')
     const label = document.getElementById('font-size-reset')
     if (label) label.textContent = Math.round(scale * 100) + '%'
     try { window.localStorage.setItem(FONT_SCALE_KEY, String(scale)) }

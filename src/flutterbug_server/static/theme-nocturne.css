@@ -41,6 +41,26 @@
   --glk-style-blockquote-bg: #243243;
   --glk-style-input-color: #ffd28c;
 
+  /* --glkote-* equivalents for the AsyncGlk-based /play2 path. The same
+     theme file drives both renderers: Plotkin's glkote.css reads --glk-*
+     while asyncglk-css reads --glkote-*. The base-size vars are read by
+     play2.ts's apply_font_scale() and multiplied by --glk-game-font-scale. */
+  --glkote-buffer-bg: var(--glk-window-bg);
+  --glkote-buffer-fg: var(--glk-buffer-text-color);
+  --glkote-buffer-line-height: var(--glk-buffer-line-height);
+  --glkote-buffer-base-size: 19px;            /* matches --glk-buffer-font-size at scale=1 */
+  --glkote-buffer-reverse-bg: var(--glk-buffer-text-color);
+  --glkote-buffer-reverse-fg: var(--glk-window-bg);
+  --glkote-grid-bg: var(--glk-grid-bg);
+  --glkote-grid-fg: var(--glk-grid-text-color);
+  --glkote-grid-base-size: 14px;              /* matches --glk-grid-font-size at scale=1 */
+  --glkote-grid-base-line-height: 18px;
+  --glkote-grid-reverse-bg: var(--glk-grid-text-color);
+  --glkote-grid-reverse-fg: var(--glk-grid-bg);
+  --glkote-grid-mono-family: var(--glk-grid-font-family);
+  --glkote-prop-family: var(--glk-buffer-font-family);
+  --glkote-input-fg: var(--glk-style-input-color);
+
   /* See theme-flutterbug.css for the rationale; Nocturne runs slightly
      wider to accommodate uppercase letter-spacing on the h3 labels. */
   --fb-sidebar-width: clamp(14rem, 22vw, 18rem);
