@@ -493,9 +493,18 @@ $(document).ready(() => {
     $('#download-commands').on('click', download_commands)
     $('#download-chat').on('click', download_chat)
     $('#chat-input').on('keydown', function (ev) {
-        if (ev.key === 'Enter') send_chat()
-        else if (ev.key === 'Escape') focus_game_input()
-        else if (ev.key !== 'Backspace' && ev.key !== 'Delete') send_typing('chat')
+        /* Plain Enter sends; Shift+Enter falls through to the textarea's
+           default newline insertion. preventDefault is required because
+           the input is now a <textarea> -- without it the message would
+           also get a trailing \n. */
+        if (ev.key === 'Enter' && !ev.shiftKey) {
+            ev.preventDefault()
+            send_chat()
+        } else if (ev.key === 'Escape') {
+            focus_game_input()
+        } else if (ev.key !== 'Backspace' && ev.key !== 'Delete') {
+            send_typing('chat')
+        }
     })
 
     /* Slash-chat shortcut: when the user presses '/' as the very first

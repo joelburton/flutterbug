@@ -415,21 +415,23 @@ body.mode-fixed #gameport {
 
 #chat-input {
   flex: 1 1 0;
-  /* min-width: 0 lets flex shrink the input below its intrinsic min-
-     content size (which for an <input type=text> is driven by the
-     default size=20 attribute + padding). Without this the input
-     refuses to shrink and the row overflows the sidebar -- visible at
-     larger fonts or browser zoom because the send button gets pushed
-     past the right edge. */
+  /* min-width: 0 lets flex shrink the field below its intrinsic min-
+     content size (textarea's default cols=20 + padding). Without it the
+     row overflows at larger fonts or browser zoom. */
   min-width: 0;
   box-sizing: border-box;
   font-size: var(--fb-chat-input-font-size);
   font-family: var(--fb-font-serif);
+  line-height: 1.3;
   color: var(--fb-chat-input-color);
   padding: var(--fb-chat-input-padding-y) var(--fb-chat-input-padding-x);
   border: 1px solid var(--fb-chat-input-border);
   border-radius: var(--fb-chat-input-radius);
   background: var(--fb-chat-input-bg);
+  /* The native bottom-right drag handle on textareas would push out of
+     the sidebar at smaller widths and looks unrelated to the rest of
+     the chrome. */
+  resize: none;
 }
 
 #chat-input::placeholder {

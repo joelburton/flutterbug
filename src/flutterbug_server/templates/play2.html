@@ -65,14 +65,13 @@ var multiplayer_playername = {{ playername | tojson }};
 </h3>
 <div id="chat-messages"></div>
 <div id="chat-input-row">
-  <input id="chat-input" type="text" placeholder="Say something… (Enter sends)" autocomplete="off">
+  <textarea id="chat-input" rows="2" placeholder="Say something… (Enter sends, Shift+Enter for newline)" autocomplete="off"></textarea>
 </div>
 <label id="slash-chat-option">
   <input id="slash-chat-toggle" type="checkbox" checked>
   Use <kbd>/</kbd> to jump to chat
 </label>
 <div id="font-size-controls">
-  <span class="font-size-label">Game text size</span>
   <div class="font-size-buttons">
     <button id="font-size-down" type="button" aria-label="Smaller game text">A−</button>
     <button id="font-size-reset" type="button" aria-label="Reset game text size">100%</button>
