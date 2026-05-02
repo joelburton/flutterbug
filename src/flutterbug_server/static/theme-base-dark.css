@@ -1,18 +1,16 @@
 /*
  * Dark-mode theme defaults.
  *
- * Sits between theme-base.css and an individual dark theme. Holds the
- * vars that vary by mode (light vs dark) but are typically shared across
- * dark themes — the serif stack, player palette tuned for dark
- * backgrounds, etc. Loaded transitively via @import; no theme should
- * link this file directly.
+ * Sits between theme-base.css and an individual dark theme. Color-only
+ * by design: anything structural (spacing, fonts, sizes) is universal
+ * and lives in theme-base.css; this file just holds the palette tuned
+ * for dark backgrounds. Loaded transitively via @import; no theme
+ * should link this file directly.
  */
 
 @import "theme-base.css";
 
 :root {
-  --fb-font-serif: "Source Serif 4", "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, serif;
-
   /* Player label colors. Hand-picked to be perceptually distinct AND
      legible on near-black sidebar/feed backgrounds. Light and saturated
      -- pastels read better against very dark backgrounds than the deep

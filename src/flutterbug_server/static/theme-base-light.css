@@ -3,16 +3,14 @@
  *
  * Sits between theme-base.css and an individual light theme. Holds the
  * vars that vary by mode (light vs dark) but are typically shared across
- * light themes — the serif stack, player palette tuned for light
- * backgrounds, etc. Loaded transitively via @import; no theme should
- * link this file directly.
+ * light themes — currently just the player palette tuned for light
+ * backgrounds. Loaded transitively via @import; no theme should link
+ * this file directly.
  */
 
 @import "theme-base.css";
 
 :root {
-  --fb-font-serif: "Source Serif 4", Georgia, serif;
-
   /* Player label colors. Hand-picked to be perceptually distinct AND
      legible on warm beige sidebar/feed backgrounds. Saturated and dark;
      each lands at roughly WCAG AA against a near-white background. */
