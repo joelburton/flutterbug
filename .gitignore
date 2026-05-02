@@ -67,3 +67,7 @@ src/flutterbug_server/static/asyncglk-css/
 
 # Game save files (runtime artifacts in launch dir)
 *.glksave
+
+# Game transcript files written by SCRIPT ON in the launch dir
+out*.txt
+*-transcript.txt

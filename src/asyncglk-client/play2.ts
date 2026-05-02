@@ -21,6 +21,11 @@ declare const $: JQueryStatic
 // namedialog.js is loaded as a separate <script> tag in play2.html and
 // exposes a Dialog global (Plotkin's simplified file-pick dialog).
 // FlutterbugDialog below wraps it for AsyncGlk's async interface.
+//
+// namedialog's callback signature: it passes the bare filename STRING
+// on accept, or null on cancel. (Not an object — that initially threw
+// us; resolving as if it were `{filename, usage, gameid}` returned
+// undefined and broke save/script/transcript.)
 declare const Dialog: {
     classname: string
     init(iface?: {GlkOte?: unknown, dom_prefix?: string}): void
@@ -29,7 +34,7 @@ declare const Dialog: {
         tosave: boolean,
         usage: string | null,
         gameid: string | null,
-        callback: (fileref: {filename: string, usage?: string, gameid?: string} | null) => void,
+        callback: (filename: string | null) => void,
     ): void
 }
 
@@ -122,8 +127,11 @@ const FlutterbugDialog = {
         const ext = extension.replace(/^\./, '')
         const usage = EXTENSION_TO_USAGE[ext] ?? null
         return new Promise<string | null>(resolve => {
-            Dialog.open(is_write, usage, null, fileref => {
-                resolve(fileref ? fileref.filename : null)
+            Dialog.open(is_write, usage, null, filename => {
+                /* namedialog passes the bare filename string (or null on
+                   cancel). AsyncGlk's caller wraps `{filename}` around
+                   whatever we resolve with. */
+                resolve(filename)
             })
         })
     },
