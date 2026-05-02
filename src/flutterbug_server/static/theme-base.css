@@ -414,7 +414,15 @@ body.mode-fixed #gameport {
 }
 
 #chat-input {
-  flex: 1;
+  flex: 1 1 0;
+  /* min-width: 0 lets flex shrink the input below its intrinsic min-
+     content size (which for an <input type=text> is driven by the
+     default size=20 attribute + padding). Without this the input
+     refuses to shrink and the row overflows the sidebar -- visible at
+     larger fonts or browser zoom because the send button gets pushed
+     past the right edge. */
+  min-width: 0;
+  box-sizing: border-box;
   font-size: var(--fb-chat-input-font-size);
   font-family: var(--fb-font-serif);
   color: var(--fb-chat-input-color);
@@ -429,6 +437,8 @@ body.mode-fixed #gameport {
 }
 
 #chat-send {
+  flex: 0 0 auto;
+  box-sizing: border-box;
   font-size: var(--fb-chat-send-font-size);
   color: var(--fb-chat-send-color);
   padding: var(--fb-chat-send-padding-y) var(--fb-chat-send-padding-x);
@@ -436,6 +446,7 @@ body.mode-fixed #gameport {
   border-radius: var(--fb-chat-send-radius);
   background: var(--fb-chat-send-bg);
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .feed-line {
