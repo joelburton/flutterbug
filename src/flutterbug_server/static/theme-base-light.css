@@ -1,19 +1,59 @@
 /*
  * Light-mode theme defaults.
  *
- * Sits between theme-base.css and an individual light theme. Holds the
- * vars that vary by mode (light vs dark) but are typically shared across
- * light themes — currently just the player palette tuned for light
- * backgrounds. Loaded transitively via @import; no theme should link
- * this file directly.
+ * Sits between theme-base.css and an individual light theme. Color-only
+ * by design: anything structural (spacing, fonts, sizes) is universal
+ * and lives in theme-base.css; this file holds a complete plain palette
+ * tuned for light backgrounds. A theme that just `@import`s this file
+ * will render as a usable light UI; concrete themes (flutterbug, etc.)
+ * override only the colors they want to recolor.
+ *
+ * Loaded transitively via @import; no theme should link this file
+ * directly.
  */
 
 @import "theme-base.css";
 
 :root {
+  /* Gameport (left side) -- the surround in fixed mode plus the buffer
+     and grid windows that AsyncGlk paints into. */
+  --fb-color-gameport-bg: #ffffff;
+  --glkote-buffer-bg: #ffffff;
+  --glkote-buffer-fg: #1a1a1a;
+  --glkote-buffer-reverse-bg: #1a1a1a;
+  --glkote-buffer-reverse-fg: #ffffff;
+  --glkote-grid-bg: #e8e8e8;
+  --glkote-grid-fg: #1a1a1a;
+  --glkote-prop-family: var(--fb-font-serif);
+  --glkote-input-fg: #1a4a8e;
+
+  /* Sidebar (right pane). */
+  --fb-sidebar-bg: #e8e8e8;
+  --fb-sidebar-border: #b0b0b0;
+  --fb-sidebar-text: #1a1a1a;
+  --fb-brand-divider: #b0b0b0;
+  --fb-brand-color: #1a1a1a;
+
   /* Section labels (h3) inherit the sidebar text color by default;
      individual themes can override to a more muted/distinct hue. */
   --fb-h3-color: var(--fb-sidebar-text);
+
+  /* Multiplayer status banner. */
+  --fb-status-color: #4a4a4a;
+  --fb-status-bg: #d8d8d8;
+
+  /* Commands feed + chat messages panels. */
+  --fb-feed-border: #b0b0b0;
+  --fb-feed-bg: #f5f5f5;
+
+  /* Chat input row. */
+  --fb-chat-input-color: #1a1a1a;
+  --fb-chat-input-placeholder-color: #888888;
+  --fb-chat-input-border: #b0b0b0;
+  --fb-chat-input-bg: #ffffff;
+  --fb-chat-send-color: #1a1a1a;
+  --fb-chat-send-border: #b0b0b0;
+  --fb-chat-send-bg: #d8d8d8;
 
   /* Player label colors. Hand-picked to be perceptually distinct AND
      legible on warm beige sidebar/feed backgrounds. Saturated and dark;
@@ -26,5 +66,5 @@
   --fb-player-color-6: #106d75; /* teal */
   --fb-player-color-7: #7a1f3d; /* wine */
   --fb-player-color-8: #3d3a36; /* charcoal */
-  --fb-player-fallback-color: #555;
+  --fb-player-fallback-color: #555555;
 }

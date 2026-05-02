@@ -3,17 +3,57 @@
  *
  * Sits between theme-base.css and an individual dark theme. Color-only
  * by design: anything structural (spacing, fonts, sizes) is universal
- * and lives in theme-base.css; this file just holds the palette tuned
- * for dark backgrounds. Loaded transitively via @import; no theme
- * should link this file directly.
+ * and lives in theme-base.css; this file holds a complete plain palette
+ * tuned for dark backgrounds. A theme that just `@import`s this file
+ * will render as a usable dark UI; concrete themes (nocturne,
+ * parchment-dark, etc.) override only the colors they want to recolor.
+ *
+ * Loaded transitively via @import; no theme should link this file
+ * directly.
  */
 
 @import "theme-base.css";
 
 :root {
+  /* Gameport (left side) -- the surround in fixed mode plus the buffer
+     and grid windows that AsyncGlk paints into. */
+  --fb-color-gameport-bg: #000000;
+  --glkote-buffer-bg: #000000;
+  --glkote-buffer-fg: #e0e0e0;
+  --glkote-buffer-reverse-bg: #e0e0e0;
+  --glkote-buffer-reverse-fg: #000000;
+  --glkote-grid-bg: #1a1a1a;
+  --glkote-grid-fg: #e0e0e0;
+  --glkote-prop-family: var(--fb-font-serif);
+  --glkote-input-fg: #82b9ff;
+
+  /* Sidebar (right pane). */
+  --fb-sidebar-bg: #2a2a2a;
+  --fb-sidebar-border: #4a4a4a;
+  --fb-sidebar-text: #e0e0e0;
+  --fb-brand-divider: #4a4a4a;
+  --fb-brand-color: #e0e0e0;
+
   /* Section labels (h3) inherit the sidebar text color by default;
      individual themes can override to a more muted/distinct hue. */
   --fb-h3-color: var(--fb-sidebar-text);
+
+  /* Multiplayer status banner. */
+  --fb-status-color: #cccccc;
+  --fb-status-bg: #1a1a1a;
+
+  /* Commands feed + chat messages panels. */
+  --fb-feed-border: #4a4a4a;
+  --fb-feed-bg: #1a1a1a;
+
+  /* Chat input row. */
+  --fb-chat-input-color: #e0e0e0;
+  --fb-chat-input-placeholder-color: #888888;
+  --fb-chat-input-border: #4a4a4a;
+  --fb-chat-input-bg: #1a1a1a;
+  --fb-chat-send-color: #e0e0e0;
+  --fb-chat-send-border: #4a4a4a;
+  --fb-chat-send-bg: #2a2a2a;
 
   /* Player label colors. Hand-picked to be perceptually distinct AND
      legible on near-black sidebar/feed backgrounds. Light and saturated

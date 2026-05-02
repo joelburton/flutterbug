@@ -277,8 +277,11 @@ body.mode-fixed #gameport {
 
 #shared-status {
   margin: var(--fb-status-margin-top) var(--fb-status-margin-x) var(--fb-status-margin-bottom) var(--fb-status-margin-x);
+  padding: 0.25rem 0.5rem;
   font-size: var(--fb-status-size);
   color: var(--fb-status-color);
+  background: var(--fb-status-bg);
+  border-radius: 0.25rem;
   font-style: italic;
   min-height: var(--fb-status-min-height);
   display: none;
