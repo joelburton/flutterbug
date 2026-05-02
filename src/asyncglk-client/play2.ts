@@ -437,6 +437,11 @@ function focus_game_input(): void {
     if (el.length) el.focus()
 }
 
+function active_game_input(): HTMLElement | null {
+    const el = $('#windowport input[type=text]:visible, #windowport textarea:visible').first()
+    return el.length ? (el[0] as HTMLElement) : null
+}
+
 // ---------------------------------------------------------------------------
 // Page-ready bootstrap
 // ---------------------------------------------------------------------------
@@ -516,4 +521,31 @@ $(document).ready(() => {
        typing in the game window. Defined out here as a function rather
        than inline so #chat-input's keydown handler can call it. */
     void focus_game_input  // keep linters from flagging it as unused
+
+    /* Tab toggles between the game's active input and the chat input.
+       The page has other focusable controls (download buttons,
+       font-size buttons, slash-chat toggle) but the user wanted Tab to
+       cycle only the two text fields they're actually likely to be
+       typing into. Implementing it as a focus-swap rather than a
+       tabindex/-1 sweep gives wrap-around (Tab from chat goes to game
+       and vice versa) and is robust to AsyncGlk's dynamic input
+       elements that come and go as windows open/close. Capture phase
+       so AsyncGlk's per-input keydown handlers (which stopPropagation
+       on Tab) don't swallow it before we see it. */
+    document.addEventListener('keydown', ev => {
+        if (ev.key !== 'Tab' || ev.altKey || ev.ctrlKey || ev.metaKey) return
+        const chat = document.getElementById('chat-input')
+        const game = active_game_input()
+        if (!chat || !game) return
+        const active = document.activeElement
+        if (active === chat) {
+            ev.preventDefault()
+            ev.stopPropagation()
+            game.focus()
+        } else if (active === game) {
+            ev.preventDefault()
+            ev.stopPropagation()
+            chat.focus()
+        }
+    }, /* useCapture = */ true)
 })
