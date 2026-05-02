@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<!--
+  Phase 1 of the AsyncGlk PoC: render a hard-coded first-turn Update with
+  AsyncGlk.WebGlkOte, no websocket, no flutterbug multiplayer layer.
+
+  If this page renders the prologue text + waits for line input, AsyncGlk
+  is correctly handling RemGlk JSON the same way Plotkin's GlkOte does.
+
+  Open at /static/asyncglk-test.html.
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AsyncGlk Phase 1: static-render test</title>
+<link rel="stylesheet" href="/static/asyncglk-css/glkote.css">
+<link rel="stylesheet" href="/static/asyncglk-css/light.css">
+<style>
+  body { margin: 0; padding: 0; font-family: serif; }
+  #status-banner {
+    background: #1a1a1a;
+    color: #6f6;
+    font-family: monospace;
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  #gameport {
+    position: relative;
+    width: 80ch;
+    max-width: 100%;
+    height: 600px;
+    margin: 8px auto;
+    border: 1px solid #ccc;
+  }
+</style>
+</head>
+<body>
+<div id="status-banner">Phase 1: AsyncGlk renders Strings.gblorb's first turn with no VM, no websocket.</div>
+
+<div id="gameport">
+  <div id="windowport"></div>
+  <div id="loadingpane" style="display:none;">Loading...</div>
+  <div id="errorpane" style="display:none;"><div id="errorcontent"></div></div>
+</div>
+
+<script src="/static/jquery-3.7.1.min.js"></script>
+<script src="/static/asyncglk.bundle.js"></script>
+<script>
+(async function () {
+    const banner = document.getElementById('status-banner');
+
+    // Real first-turn update from glulxe Strings.gblorb (captured via
+    // flutterbug-terps). Hard-coded so this page is self-contained.
+    const sampleUpdate = {
+        "type": "update",
+        "content": [
+            {"id": 2, "clear": true, "bg": null, "fg": null, "lines": [
+                {"content": [{"style": "normal", "text": "                                                        "}], "line": 0}
+            ]},
+            {"id": 1, "clear": true, "bg": null, "fg": null, "text": [
+                {}, {}, {}, {},
+                {"content": [{"style": "normal",
+                  "text": "This is a fable, a song that bugfolk sing as the weather warms, the one about Pik, the bugfolk bard of legend, and how their skill and cleverness impressed four master musicians and called the moon from the sky. Ready to start the song?"}]},
+                {}, {},
+                {"content": [
+                    {"style": "normal", "text": " "},
+                    {"style": "subheader", "text": " ([[[[){ "},
+                    {"style": "normal", "text": " "},
+                    {"style": "emphasized", "text": "(When you see this taterbug, press any key to continue.)"}
+                ]},
+                {}, {}
+            ]}
+        ],
+        "gen": 1,
+        "input": [{"gen": 1, "id": 1, "maxlen": 256, "type": "line"}],
+        "windows": [
+            {"gridheight": 1, "gridwidth": 80, "height": 17.39, "id": 2,
+             "left": 0, "rock": 1, "top": 0, "type": "grid", "width": 570},
+            {"height": 480, "id": 1, "left": 0, "rock": 2,
+             "top": 17.39, "type": "buffer", "width": 570}
+        ]
+    };
+
+    try {
+        const glkote = new AsyncGlk.WebGlkOte();
+        glkote.init({
+            gameport: 'gameport',
+            windowport: 'windowport',
+            loadingpane: 'loadingpane',
+            errorpane: 'errorpane',
+            errorcontent: 'errorcontent',
+            // accept_func receives input events from the user. We don't need
+            // them in this static test — just log them.
+            accept: function (event) {
+                console.log('GlkOte accept event:', event);
+                banner.textContent =
+                    'Got ' + event.type + ' event (would normally go to a VM).';
+            },
+        });
+        banner.textContent = 'GlkOte.init() ok. Pushing sample update...';
+        glkote.update(sampleUpdate);
+        banner.textContent = 'GlkOte.update() ok. Prologue should be visible below; cursor is in the input field.';
+    } catch (e) {
+        banner.style.background = '#400';
+        banner.style.color = '#fcc';
+        banner.textContent = 'FAILED: ' + e.message;
+        console.error(e);
+    }
+})();
+</script>
+</body>
+</html>
