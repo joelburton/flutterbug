@@ -217,36 +217,6 @@ def create_app(settings) -> FastAPI:
         html = render_template('main.html', build_main_context(sessionid))
         return HTMLResponse(html)
 
-    @app.get('/play')
-    async def play_get(
-        request: Request,
-        name: str = Query(''),
-        theme: str = Query('flutterbug'),
-    ):
-        sessionid = request.session.get('sessionid')
-        if not sessionid:
-            return RedirectResponse(url='/', status_code=303)
-
-        playername = name.strip()[:PLAYERNAME_MAX_LENGTH] or f'Player-{sessionid[:6]}'
-        themename = theme.strip().lower()
-        if themename not in AVAILABLE_THEMES:
-            themename = 'flutterbug'
-
-        html = render_template('play.html', {
-            'gidebug': settings.gidebug,
-            'playername': playername,
-            'themename': themename,
-            'theme_css': AVAILABLE_THEMES[themename],
-            'asset_version': asset_version,
-            'mode': getattr(settings, 'mode', 'flex'),
-        })
-        return HTMLResponse(html)
-
-    # Phase-2 PoC of the AsyncGlk client. Same auth + querystring contract
-    # as /play, but renders play2.html which loads asyncglk.bundle.js and
-    # playws-asyncglk.js instead of Plotkin's glkote.js + playws.js. Same
-    # websocket protocol, same multiplayer overlay; only the rendering
-    # layer changes.
     @app.get('/play2')
     async def play2_get(
         request: Request,

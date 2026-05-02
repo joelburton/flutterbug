@@ -289,9 +289,6 @@ def main():
         '--status-cols', type=int, default=72, metavar='N',
         help='72 (default) in flex mode, sets the status window width in columns.')
     parser.add_argument(
-        '--gidebug', action='store_true',
-        help='activate the GlkOte debug console')
-    parser.add_argument(
         '--jsondebug', action='store_true',
         help='log JSON messages in/out for websocket and game transport debugging')
     parser.add_argument(
