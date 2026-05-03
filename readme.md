@@ -66,8 +66,8 @@ Every flutterbug invocation must pick one of:
   reachable from outside your machine** (any tunnel, port-forward, LAN,
   VPN, etc).
 - `--no-password` — anyone who reaches the URL can sign in. Only safe
-  on a fully trusted local network. Don't combine with `--tunnel` or
-  `--cloudflare` unless you genuinely intend a public game.
+  on a fully trusted local network. Don't combine with `--tunnel`
+  unless you genuinely intend a public game.
 
 Forgetting to pick will fail loudly rather than quietly exposing the
 server.
@@ -86,12 +86,21 @@ opens it in your default browser.
 ## Playing with friends (public tunnel)
 
 In order for your friends to connect to your game, you'll need to open a
-"tunnel" to the server on your computer. Flutterbug out of the box supports
-[Localhost.run](https://localhost.run) tunnels. These are free and require
-nothing else installed on your computer.
+"tunnel" to the server on your computer. Flutterbug supports two tunnel
+providers; pick one with `--tunnel TYPE`:
+
+- `--tunnel lhr` — uses [Localhost.run](https://localhost.run) over ssh.
+  Free, no install needed beyond the ssh that ships with most systems.
+  **Caveat:** some home routers (especially ones with "advanced security"
+  or family-filter features) block localhost.run entirely, in which case
+  the tunnel will fail to come up. If that happens, switch to `cf`.
+- `--tunnel cf` — uses [Cloudflare](https://www.cloudflare.com)'s free
+  quick-tunnel. Requires installing `cloudflared` on your computer (no
+  Cloudflare account needed). Tends to be more reliable across networks
+  and may scale better for larger friend groups.
 
 ```sh
-flutterbug --password "super secret" --open --tunnel --story=MyGameFile.z5
+flutterbug --password "super secret" --open --tunnel lhr --story=MyGameFile.z5
 ```
 
 After a moment, this will open your browser to the same link you can send to
@@ -150,25 +159,16 @@ page — even if a password is required for new visitors. Pick any long random
 string and keep it the same across invocations. Don't reuse it as your game
 password.
 
-### Other tunneling options
-
-You can use Cloudflare tunneling rather than Localhost.run. To do so, you'll
-need to install `cloudflared` on your computer. You don't need a Cloudflare
-account. Cloudflare may scale better for larger friend groups:
-
-```sh
-flutterbug --password "super secret" --cloudflare --open --story=MyGameFile.z5
-```
-
 ### How `--open` interacts with tunnels
 
-When `--open` is combined with either tunnel flag, Flutterbug waits for
-the public DNS record to be live before opening the browser. This works
+When `--open` is combined with `--tunnel`, Flutterbug waits for the
+public DNS record to be live before opening the browser. This works
 around a Safari/macOS quirk where the *first* failed DNS lookup gets
 cached as NXDOMAIN, and the page keeps showing "can't find the server"
 even after the tunnel is up. If the tunnel doesn't come up within 30
 seconds, Flutterbug exits with a non-zero status instead of opening
-anything.
+anything. If you were using `--tunnel lhr` and it never came up, that's
+often a router-blocking issue — try `--tunnel cf`.
 
 
 ## Credits

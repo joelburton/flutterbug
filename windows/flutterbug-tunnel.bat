@@ -37,7 +37,7 @@ if "%PASSWORD%" == "" (
 )
 
 cd /d "%~dp1"
-%PYTHON% -m flutterbug_server --password "%PASSWORD%" --tunnel --open --story="%~nx1"
+%PYTHON% -m flutterbug_server --password "%PASSWORD%" --tunnel lhr --open --story="%~nx1"
 
 :wait_and_exit
 echo.

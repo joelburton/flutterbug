@@ -137,9 +137,7 @@ def create_app(settings) -> FastAPI:
     # the cookie from leaking if a future config (or a misbehaving proxy)
     # ever serves the same session over plain HTTP. For purely-local
     # development we leave it off so http://localhost still works.
-    tunneled = (
-        getattr(settings, 'tunnel', False)
-        or getattr(settings, 'cloudflare', False))
+    tunneled = bool(getattr(settings, 'tunnel', None))
     app.add_middleware(
         SessionMiddleware,
         secret_key=settings.secret,

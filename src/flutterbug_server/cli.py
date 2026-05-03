@@ -315,14 +315,13 @@ def main():
     parser.add_argument(
         '--open', "-o", action='store_true',
         help='open the app URL in the default web browser once server is ready')
-    tunnel_group = parser.add_mutually_exclusive_group()
-    tunnel_group.add_argument(
-        '--tunnel', "-t", action='store_true',
-        help='expose the server publicly via a localhost.run ssh tunnel.')
-
-    tunnel_group.add_argument(
-        '--cloudflare', "-c", action='store_true',
-        help='expose via cloudflared tunnel instead of localhost.run.')
+    parser.add_argument(
+        '--tunnel', "-t", choices=('cf', 'lhr'), default=None,
+        metavar='TYPE',
+        help='expose the server publicly via a tunnel. '
+             '"cf" = Cloudflare (cloudflared must be installed); '
+             '"lhr" = localhost.run (over ssh, no install needed, but '
+             'may be blocked by some home routers).')
     parser.add_argument(
         '--secret', "-S", default=None,
         help='secret key for signing session cookies. If set, users stay '
@@ -392,17 +391,12 @@ def main():
     tunnel_url_holder: dict = {'url': None}
     tunnel_url_event: threading.Event | None = None
     tunnel_banner_done: threading.Event | None = None
-    if args.tunnel:
-        log.warning(
-            'As of 2026-05-02, localhost.run tunnels have been unreliable '
-            '— the service may be having problems. If the tunnel '
-            'fails to come up or DNS never propagates, try --cloudflare '
-            'instead.')
+    if args.tunnel == 'lhr':
         tunnel_name = 'localhost.run'
         tunnel_banner_done = threading.Event()
         tunnel_proc, tunnel_url_holder, tunnel_url_event = (
             _start_localhostrun_tunnel(args.port, log, tunnel_banner_done))
-    elif args.cloudflare:
+    elif args.tunnel == 'cf':
         tunnel_name = 'cloudflared'
         tunnel_banner_done = threading.Event()
         tunnel_proc, tunnel_url_holder, tunnel_url_event = (
@@ -457,6 +451,13 @@ def main():
                 log.error(
                     'Tunnel URL did not appear within %ds; shutting down.',
                     int(OPEN_TIMEOUT))
+                if args.tunnel == 'lhr':
+                    log.warning(
+                        'Some home routers (especially ones with '
+                        '"advanced security" or family-filter features '
+                        'enabled) block localhost.run entirely. If this '
+                        'keeps happening, try --tunnel cf instead, which '
+                        'uses Cloudflare and tends to get through.')
                 tunnel_failed.set()
                 os.kill(os.getpid(), signal.SIGINT)
             th = threading.Thread(target=_open_tunneled, daemon=True)
