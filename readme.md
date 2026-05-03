@@ -159,6 +159,54 @@ page — even if a password is required for new visitors. Pick any long random
 string and keep it the same across invocations. Don't reuse it as your game
 password.
 
+### Server-side transcripts and command recordings: `--transcript` / `--recording`
+
+If you want a complete log of the game session — captured from the very
+first turn, working with any VM, and not subject to the emglken bug
+described below — pass one or both of:
+
+```sh
+flutterbug --transcript game.txt --recording game.cmd ...
+```
+
+- `--transcript PATH` (also `-T`) writes a full transcript: the game's
+  output text with player commands inlined as `> command`, formatted
+  like a real game log. In multiplayer it prefixes commands with the
+  player name (`> Alice: look`) so you can tell who did what.
+- `--recording PATH` (also `-R`) writes just the commands, one per
+  line — suitable as input for the in-game `REPLAY` command.
+
+Both files are opened at startup (Flutterbug exits if the parent
+directory doesn't exist), overwritten if they already exist, and
+flushed after every write — `cat <path>` will show live state at any
+time. If the VM crashes and Flutterbug relaunches it within the same
+invocation, both files keep appending; the transcript marks the
+boundary with `--- Game session ended ---`.
+
+### `SCRIPT` and `RECORDING` with emglken
+
+If you're using emglken (the default — i.e. you didn't pass `--command`)
+and your game uses the `SCRIPT ON` / `SCRIPT OFF` or `RECORDING ON` /
+`RECORDING OFF` commands to write a transcript or command list, the
+file you're writing to may appear empty until you `QUIT` the game.
+
+This is an upstream bug in emglken's bundled `glkote-term` Node module:
+its file-write layer buffers writes in a 256-byte JS buffer that only
+flushes when full, on close, or when the process exits cleanly via the
+WASM atexit chain. Most VMs don't actually `glk_stream_close` the
+transcript stream on `SCRIPT OFF` (they only detach it), so the close
++ flush only runs on `QUIT`.
+
+Workarounds:
+
+- Type `QUIT` in the game when you're done — that will flush both
+  files. Killing the server with Ctrl-C will *not* flush them; the
+  WASM atexit chain doesn't run on SIGTERM.
+- If you have a native RemGlk-built interpreter (`bocfel`, `rglulxe`,
+  etc.) installed, use it via `--command` — those flush on every write
+  via the OS, so `cat` shows the transcript continuously. Example:
+  `flutterbug --no-password --command='bocfel -rem MyGame.z5' --story=MyGame.z5`
+
 ### How `--open` interacts with tunnels
 
 When `--open` is combined with `--tunnel`, Flutterbug waits for the

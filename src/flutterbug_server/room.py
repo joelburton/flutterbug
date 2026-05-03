@@ -277,6 +277,8 @@ class SharedRoom(PersistSession):
         vm_factory: Optional[Callable[[str, str], Awaitable[VMProcess]]] = None,
         mode: str = MODE_FLEX,
         status_cols: int = 72,
+        transcript_path: Optional[str] = None,
+        recording_path: Optional[str] = None,
     ) -> None:
         super().__init__(command, log, cwd, vm_factory=vm_factory)
         if mode not in (MODE_FLEX, MODE_FIXED):
@@ -324,6 +326,30 @@ class SharedRoom(PersistSession):
         # return. A server restart is the only thing that clears it.
         self.host_sessionid: str | None = None
 
+        # Server-side transcript / command-recording files. Opened eagerly
+        # so we fail loudly at startup if the path isn't writable, rather
+        # than silently mid-game. Files live for the lifetime of this
+        # SharedRoom; if the VM dies and is relaunched, both files keep
+        # getting appended to (with a separator) so a single Flutterbug
+        # invocation produces one continuous log even across VM restarts.
+        # Independent of the in-game SCRIPT/RECORDING commands -- those
+        # are emglken's job and have known buffering issues. These
+        # capture from the very first turn, work for any VM, and stay
+        # current because we explicitly flush after every write.
+        self._transcript_path = transcript_path
+        self._recording_path = recording_path
+        self._transcript_file = self._open_log_file(transcript_path, 'transcript')
+        self._recording_file = self._open_log_file(recording_path, 'recording')
+
+    def _open_log_file(self, path: Optional[str], label: str):
+        if path is None:
+            return None
+        try:
+            return open(path, 'w', encoding='utf-8')
+        except OSError as ex:
+            self.log.error('Cannot open --%s file %s: %s', label, path, ex)
+            return None
+
     def __repr__(self) -> str:
         return '<SharedRoom>'
 
@@ -337,6 +363,26 @@ class SharedRoom(PersistSession):
         self.player_roster.clear()
         self.next_color_slot = 0
         self.locked_metrics = None
+        # Mark the transcript so a future relaunch within this same room
+        # is visibly demarcated. We don't close the log files here -- the
+        # room may be reused for a relaunched VM; they're closed in
+        # shutdown() instead.
+        if (self._transcript_file is not None
+                and self._transcript_file.tell() > 0):
+            self._write_transcript_raw('\n\n--- Game session ended ---\n\n')
+            self._transcript_file.flush()
+
+    def shutdown(self) -> None:
+        """Final teardown of the room itself; close the log files."""
+        self.close()
+        for handle in (self._transcript_file, self._recording_file):
+            if handle is not None:
+                try:
+                    handle.close()
+                except OSError:
+                    pass
+        self._transcript_file = None
+        self._recording_file = None
 
     # -----------------------------------------------------------------
     # Logging / image-URL synthesis
@@ -366,6 +412,127 @@ class SharedRoom(PersistSession):
             self.log.info('[jsondebug] %s %s', direction, text)
         else:
             self.log.info('[jsondebug] %s client=%s %s', direction, clientid, text)
+
+    def _write_session_logs(self, inobj, outobj, clientid) -> None:
+        """Append the just-played turn to --transcript / --recording files.
+
+        Called after snapshot.apply so window types reflect any new
+        windows the VM may have just opened in the same update.
+        """
+        is_player_line = (
+            inobj.get('type') == EVT_LINE and clientid is not None)
+        command = inobj.get('value', '') if is_player_line else None
+        playername = None
+        if is_player_line:
+            conn = self.clients.get(clientid)
+            playername = conn['playername'] if conn else 'Player'
+
+        if self._recording_file is not None and is_player_line:
+            try:
+                self._recording_file.write(command + '\n')
+                self._recording_file.flush()
+            except OSError as ex:
+                self.log.warning('Recording file write failed: %s', ex)
+                self._recording_file = None
+
+        if self._transcript_file is None:
+            return
+
+        try:
+            if is_player_line:
+                # No leading or trailing '\n'. The command text joins
+                # the cursor line, where the VM left its prompt --
+                # producing ">look" naturally for "> "-style prompts,
+                # or "What now? look" for unusual ones. The next
+                # paragraph break (from the VM's response) will move
+                # us off this line.
+                line = (f'{playername}: {command}'
+                        if len(self.player_roster) > 1
+                        else command)
+                self._write_transcript_raw(line)
+
+            wintypes = {w['id']: w['type'] for w in self.snapshot.windows}
+            for cont in outobj.get('content') or []:
+                if wintypes.get(cont.get('id')) != 'buffer':
+                    continue
+                # ``clear: true`` means the VM wiped the buffer. We
+                # don't actually clear our log -- it's an append-only
+                # transcript -- but we DO need to start the next
+                # paragraph on a fresh line, even if it has
+                # ``append: true`` set (since after a clear there's
+                # nothing in the buffer to append to).
+                if cont.get('clear') and self._transcript_file.tell() > 0:
+                    self._write_transcript_raw('\n')
+                for para in cont.get('text') or []:
+                    # The VM also echoes the player's command into the
+                    # buffer (Glk style 'input'). Skip it -- we already
+                    # wrote the command above.
+                    if self._is_input_echo(para):
+                        continue
+                    text = self._para_to_text(para)
+                    if para.get('append'):
+                        # Continue on the cursor line, no separator.
+                        self._write_transcript_raw(text)
+                    else:
+                        # New paragraph: write '\n' then text. Empty
+                        # paragraphs become a bare '\n', which produces
+                        # a visible blank line between siblings -- the
+                        # protocol's only signal for vertical spacing.
+                        # Skip the '\n' at file start.
+                        if self._transcript_file.tell() > 0:
+                            self._write_transcript_raw('\n')
+                        self._write_transcript_raw(text)
+            self._transcript_file.flush()
+        except OSError as ex:
+            self.log.warning('Transcript file write failed: %s', ex)
+            self._transcript_file = None
+
+    def _write_transcript_raw(self, text: str) -> None:
+        """Append to the transcript file. No-op for empty text."""
+        if not text:
+            return
+        self._transcript_file.write(text)
+
+    @staticmethod
+    def _para_to_text(para) -> str:
+        """Flatten a BufferWindowParagraphUpdate to plain text."""
+        out = []
+        for run in para.get('content') or []:
+            if isinstance(run, str):
+                out.append(run)
+            elif isinstance(run, dict):
+                # TextRun has 'text'; BufferWindowImage has no text and
+                # is skipped entirely.
+                text = run.get('text')
+                if isinstance(text, str):
+                    out.append(text)
+        return ''.join(out)
+
+    @staticmethod
+    def _is_input_echo(para) -> bool:
+        """True iff every text run in the paragraph is style 'input'.
+
+        Glk renders the player's just-typed line into the buffer with
+        style_Input. We already write "> command" ourselves, so dropping
+        these prevents a duplicate echo line in the transcript. Bare
+        strings and runs of any other style mean it's mixed content
+        (the VM appended the response on the same line as the echo) --
+        keep it so we don't drop the response with the echo.
+        """
+        runs = para.get('content') or []
+        if not runs:
+            return False
+        saw_input = False
+        for run in runs:
+            if isinstance(run, str):
+                return False
+            if not isinstance(run, dict):
+                return False
+            if run.get('style') == 'input':
+                saw_input = True
+            elif run.get('text'):
+                return False
+        return saw_input
 
     def _build_resource_url_for_image(self, image_num) -> str | None:
         if not self.resource_dir:
@@ -867,6 +1034,7 @@ class SharedRoom(PersistSession):
                 self._add_missing_image_urls(outobj)
                 self._log_json('game_out', outobj, clientid)
                 self.snapshot.apply(outobj)
+                self._write_session_logs(inobj, outobj, clientid)
 
                 special = outobj.get('specialinput')
                 if special and special.get('type') == SPECIAL_FILEREF_PROMPT:

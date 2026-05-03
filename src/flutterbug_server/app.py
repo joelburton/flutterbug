@@ -122,12 +122,14 @@ def create_app(settings) -> FastAPI:
             vm_factory=getattr(settings, 'vm_factory', None),
             mode=getattr(settings, 'mode', 'flex'),
             status_cols=getattr(settings, 'status_cols', 72),
+            transcript_path=getattr(settings, 'transcript', None),
+            recording_path=getattr(settings, 'recording', None),
         )
         autounpack_blorb_resources(settings.story_path, resource_dir, log)
         try:
             yield
         finally:
-            app.state.room.close()
+            app.state.room.shutdown()
             resource_tmpdir.cleanup()
 
     app = FastAPI(lifespan=lifespan)

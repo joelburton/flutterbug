@@ -926,3 +926,562 @@ async def test_roster_cap_overflows_rather_than_refuse_when_all_connected(
     assert len(room.player_roster) == 4
     assert [e['name'] for e in room.player_roster] == [
         'P0', 'P1', 'P2', 'P3']
+
+
+# --------------------------------------------------------------------
+# --transcript / --recording session-log files
+# --------------------------------------------------------------------
+
+def _transcript_responder():
+    """Responder that emits buffer text per turn so transcripts have content.
+
+    Init emits an intro paragraph; each subsequent line input gets a
+    brief response. Mimics the shape of a real RemGlk update, including
+    nested ``content[].text[].content[]`` structure.
+    """
+    state = {'gen': 0, 'turn': 0}
+
+    def respond(inobj):
+        state['gen'] += 1
+        if inobj['type'] == 'init':
+            return {
+                'type': 'update', 'gen': state['gen'],
+                'windows': [{'id': 1, 'type': 'buffer'}],
+                'content': [{'id': 1, 'text': [
+                    {'content': [{'style': 'normal',
+                                  'text': 'You are in a small room.'}]},
+                ]}],
+                'input': [{'id': 1, 'type': 'line'}],
+            }
+        if inobj['type'] == 'line':
+            state['turn'] += 1
+            return {
+                'type': 'update', 'gen': state['gen'],
+                'content': [{'id': 1, 'text': [
+                    {'content': [{'style': 'normal',
+                                  'text': f'Response {state["turn"]}.'}]},
+                ]}],
+                'input': [{'id': 1, 'type': 'line'}],
+            }
+        return {'type': 'update', 'gen': state['gen']}
+    return respond
+
+
+def _make_logged_room(factory, tmp_path, *, transcript=True, recording=True):
+    return SharedRoom(
+        command='fake', log=logging.getLogger('flutterbug.test'),
+        cwd='/tmp', jsondebug=False, vm_factory=factory,
+        transcript_path=str(tmp_path / 'transcript.txt') if transcript else None,
+        recording_path=str(tmp_path / 'recording.txt') if recording else None,
+    )
+
+
+async def test_transcript_captures_intro_then_command_then_output(
+        factory, tmp_path):
+    factory.responder = _transcript_responder()
+    room = _make_logged_room(factory, tmp_path)
+
+    a, _ = connect(room, 'Alice')
+    await room.handle_client_message(a, init_msg(0))
+    await drain(room)
+    await room.handle_client_message(a, line_msg('look', gen=1))
+    await drain(room)
+    room.shutdown()
+
+    text = (tmp_path / 'transcript.txt').read_text()
+    assert 'You are in a small room.' in text
+    # No "> " prefix from us -- the VM emits its own prompt; we just
+    # write the bare command (or "Player: command" in multiplayer).
+    assert 'look' in text
+    assert '> look' not in text
+    assert 'Response 1.' in text
+    # Single-player: no "Alice:" prefix on the command line.
+    assert 'Alice:' not in text
+    # Order: intro before command, command before its response.
+    assert text.index('You are in') < text.index('look') < text.index('Response 1.')
+
+
+async def test_transcript_includes_player_name_in_multiplayer(
+        factory, tmp_path):
+    factory.responder = _transcript_responder()
+    room = _make_logged_room(factory, tmp_path)
+
+    a, _ = connect(room, 'Alice')
+    connect(room, 'Bob')  # second player → multiplayer attribution kicks in
+    await room.handle_client_message(a, init_msg(0))
+    await drain(room)
+    await room.handle_client_message(a, line_msg('look', gen=1))
+    await drain(room)
+    room.shutdown()
+
+    text = (tmp_path / 'transcript.txt').read_text()
+    assert 'Alice: look' in text
+    # No "> " prefix -- the prompt belongs to the VM.
+    assert '> Alice:' not in text
+
+
+async def test_recording_writes_one_command_per_line_no_init_or_intro(
+        factory, tmp_path):
+    factory.responder = _transcript_responder()
+    room = _make_logged_room(factory, tmp_path)
+
+    a, _ = connect(room, 'Alice')
+    await room.handle_client_message(a, init_msg(0))
+    await drain(room)
+    await room.handle_client_message(a, line_msg('look', gen=1))
+    await drain(room)
+    await room.handle_client_message(a, line_msg('north', gen=2))
+    await drain(room)
+    room.shutdown()
+
+    text = (tmp_path / 'recording.txt').read_text()
+    # No init, no intro, no prefix -- just commands, REPLAY-ready.
+    assert text == 'look\nnorth\n'
+
+
+async def test_transcript_is_flushed_continuously_not_only_at_shutdown(
+        factory, tmp_path):
+    """The whole point of doing this server-side: no buffering surprises.
+    File must be readable mid-game without QUIT/shutdown."""
+    factory.responder = _transcript_responder()
+    room = _make_logged_room(factory, tmp_path, recording=False)
+
+    a, _ = connect(room, 'Alice')
+    await room.handle_client_message(a, init_msg(0))
+    await drain(room)
+
+    # No shutdown() yet — but the file should already have the intro.
+    text = (tmp_path / 'transcript.txt').read_text()
+    assert 'You are in a small room.' in text
+
+    await room.handle_client_message(a, line_msg('look', gen=1))
+    await drain(room)
+    text = (tmp_path / 'transcript.txt').read_text()
+    assert 'Response 1.' in text
+
+    room.shutdown()
+
+
+async def test_recording_omits_specialresponse_filename(factory, tmp_path):
+    """Save/restore filenames are specialresponses, not line inputs.
+    They should not pollute the recording (REPLAY would choke)."""
+    factory.responder = _fileref_responder()
+    room = _make_logged_room(factory, tmp_path, transcript=False)
+
+    a, _ = connect(room, 'Alice')
+    await room.handle_client_message(a, init_msg(0))
+    await drain(room)
+    await room.handle_client_message(a, line_msg('save', gen=1))
+    await drain(room)
+    await room.handle_client_message(
+        a, specialresponse_msg('mygame.glksave', gen=2))
+    await drain(room)
+    room.shutdown()
+
+    text = (tmp_path / 'recording.txt').read_text()
+    assert text == 'save\n'
+    assert 'glksave' not in text
+
+
+async def test_log_files_survive_vm_restart_within_one_invocation(
+        factory, tmp_path):
+    """A VM crash + relaunch should keep appending to the same files,
+    with a visible separator marking where one game ended."""
+    factory.responder = _transcript_responder()
+    room = _make_logged_room(factory, tmp_path, recording=False)
+    room.CLOSE_DELAY = 0
+
+    a, _ = connect(room, 'Alice')
+    await room.handle_client_message(a, init_msg(0))
+    await drain(room)
+    await room.handle_client_message(a, line_msg('look', gen=1))
+    await drain(room)
+
+    # Simulate VM dying.
+    room.close()
+    text_after_close = (tmp_path / 'transcript.txt').read_text()
+    assert 'Game session ended' in text_after_close
+
+    # New VM session starts; transcript continues in the same file.
+    factory.responder = _transcript_responder()  # fresh state, gen restarts
+    await room.handle_client_message(a, init_msg(0))
+    await drain(room)
+
+    text = (tmp_path / 'transcript.txt').read_text()
+    # The intro from the first session AND the second are both present.
+    assert text.count('You are in a small room.') == 2
+    assert text.index('Game session ended') < text.rindex('You are in')
+
+    room.shutdown()
+
+
+async def test_transcript_strips_vm_echo_of_player_command(factory, tmp_path):
+    """Real VMs echo the typed command into the buffer with style 'input'.
+    Since we already write "> command" ourselves, the echo would produce
+    a duplicate line ("> s\\ns"). The echo paragraph must be dropped."""
+    state = {'gen': 0}
+
+    def respond(inobj):
+        state['gen'] += 1
+        if inobj['type'] == 'init':
+            return {
+                'type': 'update', 'gen': state['gen'],
+                'windows': [{'id': 1, 'type': 'buffer'}],
+                'content': [{'id': 1, 'text': [
+                    {'content': [{'style': 'normal', 'text': 'Intro.'}]},
+                ]}],
+                'input': [{'id': 1, 'type': 'line'}],
+            }
+        # Real-game shape: first paragraph is the echoed input, then
+        # the actual response.
+        return {
+            'type': 'update', 'gen': state['gen'],
+            'content': [{'id': 1, 'text': [
+                {'content': [{'style': 'input', 'text': inobj['value']}]},
+                {'content': [{'style': 'normal', 'text': 'You did the thing.'}]},
+            ]}],
+            'input': [{'id': 1, 'type': 'line'}],
+        }
+    factory.responder = respond
+
+    room = _make_logged_room(factory, tmp_path, recording=False)
+    a, _ = connect(room, 'Alice')
+    await room.handle_client_message(a, init_msg(0))
+    await drain(room)
+    await room.handle_client_message(a, line_msg('look', gen=1))
+    await drain(room)
+    room.shutdown()
+
+    text = (tmp_path / 'transcript.txt').read_text()
+    assert 'look' in text
+    assert 'You did the thing.' in text
+    # The VM's input-styled echo must be stripped so "look" appears
+    # exactly once (our written command), not twice.
+    assert text.count('look') == 1
+
+
+async def test_transcript_command_joins_vm_prompt_line(factory, tmp_path):
+    """The VM's natural prompt (whatever string it uses) ends without a
+    trailing newline; the command we write should join that line, not
+    sit on its own. Produces canonical-transcript ">look" instead of
+    a doubled ">\\n>look" or detached ">\\nlook"."""
+    state = {'gen': 0}
+
+    def respond(inobj):
+        state['gen'] += 1
+        if inobj['type'] == 'init':
+            return {
+                'type': 'update', 'gen': state['gen'],
+                'windows': [{'id': 1, 'type': 'buffer'}],
+                'content': [{'id': 1, 'text': [
+                    {'content': [{'style': 'normal', 'text': 'Intro.'}]},
+                    # Trailing prompt paragraph with no newline -- this
+                    # is what real VMs do at end-of-turn.
+                    {'content': [{'style': 'normal', 'text': '>'}]},
+                ]}],
+                'input': [{'id': 1, 'type': 'line'}],
+            }
+        return {
+            'type': 'update', 'gen': state['gen'],
+            'content': [{'id': 1, 'text': [
+                {'content': [{'style': 'input', 'text': inobj['value']}]},
+                {'content': [{'style': 'normal', 'text': 'Response.'}]},
+                {'content': [{'style': 'normal', 'text': '>'}]},
+            ]}],
+            'input': [{'id': 1, 'type': 'line'}],
+        }
+    factory.responder = respond
+
+    room = _make_logged_room(factory, tmp_path, recording=False)
+    a, _ = connect(room, 'Alice')
+    await room.handle_client_message(a, init_msg(0))
+    await drain(room)
+    await room.handle_client_message(a, line_msg('look', gen=1))
+    await drain(room)
+    room.shutdown()
+
+    text = (tmp_path / 'transcript.txt').read_text()
+    # Canonical form: prompt and command joined on one line.
+    assert '>look\n' in text
+    # And NOT the broken forms.
+    assert '>\nlook' not in text       # detached
+    assert '>\n>look' not in text      # doubled
+    # The response sits on the line right after the command -- no
+    # blank line, since we don't pad and the fixture's response
+    # paragraph isn't separated from the prompt by a blank-text
+    # paragraph.
+    assert '>look\nResponse.\n>' in text
+
+
+async def test_transcript_consecutive_paragraphs_run_together(factory, tmp_path):
+    """Two non-empty paragraphs with no empty paragraph between them
+    render on consecutive lines (single '\\n' separator), never with
+    a blank line. Blank lines come only from the VM emitting empty
+    paragraphs, which is the protocol's signal for vertical spacing."""
+    state = {'gen': 0}
+
+    def respond(inobj):
+        state['gen'] += 1
+        if inobj['type'] == 'init':
+            return {
+                'type': 'update', 'gen': state['gen'],
+                'windows': [{'id': 1, 'type': 'buffer'}],
+                'content': [{'id': 1, 'text': [
+                    {'content': [{'style': 'normal', 'text': 'First.'}]},
+                    {'content': [{'style': 'normal', 'text': 'Second.'}]},
+                    {'content': [{'style': 'normal', 'text': '>'}]},
+                ]}],
+                'input': [{'id': 1, 'type': 'line'}],
+            }
+        return {'type': 'update', 'gen': state['gen']}
+    factory.responder = respond
+
+    room = _make_logged_room(factory, tmp_path, recording=False)
+    a, _ = connect(room, 'Alice')
+    await room.handle_client_message(a, init_msg(0))
+    await drain(room)
+    room.shutdown()
+
+    text = (tmp_path / 'transcript.txt').read_text()
+    # One '\n' between paragraphs, no blank lines.
+    assert 'First.\nSecond.\n>' in text
+    # No leading blank line at file start.
+    assert text.startswith('First.')
+
+
+async def test_transcript_empty_paragraph_creates_blank_line(factory, tmp_path):
+    """An empty paragraph object ({}) is the protocol's signal for a
+    blank line. The transcript must surface that as an actual blank
+    line, not silently swallow it."""
+    state = {'gen': 0}
+
+    def respond(inobj):
+        state['gen'] += 1
+        return {
+            'type': 'update', 'gen': state['gen'],
+            'windows': [{'id': 1, 'type': 'buffer'}],
+            'content': [{'id': 1, 'text': [
+                {'content': [{'style': 'normal', 'text': 'First.'}]},
+                {},  # blank line
+                {'content': [{'style': 'normal', 'text': 'Second.'}]},
+            ]}],
+            'input': [{'id': 1, 'type': 'line'}],
+        }
+    factory.responder = respond
+
+    room = _make_logged_room(factory, tmp_path, recording=False)
+    a, _ = connect(room, 'Alice')
+    await room.handle_client_message(a, init_msg(0))
+    await drain(room)
+    room.shutdown()
+
+    text = (tmp_path / 'transcript.txt').read_text()
+    # Two '\n's = one blank line between First. and Second.
+    assert 'First.\n\nSecond.' in text
+
+
+async def test_transcript_consecutive_empty_paragraphs_stack(factory, tmp_path):
+    """Three consecutive empty paragraphs (as Inform games emit before
+    block-quoted text) must produce three blank lines, not just one."""
+    state = {'gen': 0}
+
+    def respond(inobj):
+        state['gen'] += 1
+        return {
+            'type': 'update', 'gen': state['gen'],
+            'windows': [{'id': 1, 'type': 'buffer'}],
+            'content': [{'id': 1, 'text': [
+                {'content': [{'style': 'normal', 'text': 'Foo'}]},
+                {}, {}, {},
+                {'content': [{'style': 'normal', 'text': 'Bar'}]},
+            ]}],
+            'input': [{'id': 1, 'type': 'line'}],
+        }
+    factory.responder = respond
+
+    room = _make_logged_room(factory, tmp_path, recording=False)
+    a, _ = connect(room, 'Alice')
+    await room.handle_client_message(a, init_msg(0))
+    await drain(room)
+    room.shutdown()
+
+    text = (tmp_path / 'transcript.txt').read_text()
+    # Four '\n's = three blank lines between Foo and Bar.
+    assert 'Foo\n\n\n\nBar' in text
+
+
+async def test_transcript_clear_resets_to_new_line_for_append_paragraph(
+        factory, tmp_path):
+    """When the VM clears the buffer, the next paragraph -- even one
+    with append=True -- must start on a new line in the transcript.
+    Otherwise it would run into the previous turn's command, e.g.
+    '...y/n)? nAFTER' instead of '...y/n)? n\\nAFTER'."""
+    state = {'gen': 0}
+
+    def respond(inobj):
+        state['gen'] += 1
+        if inobj['type'] == 'init':
+            return {
+                'type': 'update', 'gen': state['gen'],
+                'windows': [{'id': 1, 'type': 'buffer'}],
+                'content': [{'id': 1, 'text': [
+                    {'content': [{'style': 'normal', 'text': 'Pick (y/n)? '}]},
+                ]}],
+                'input': [{'id': 1, 'type': 'line'}],
+            }
+        return {
+            'type': 'update', 'gen': state['gen'],
+            'content': [{'id': 1, 'clear': True, 'text': [
+                {'append': True,
+                 'content': [{'style': 'normal', 'text': 'AFTER'}]},
+            ]}],
+            'input': [{'id': 1, 'type': 'line'}],
+        }
+    factory.responder = respond
+
+    room = _make_logged_room(factory, tmp_path, recording=False)
+    a, _ = connect(room, 'Alice')
+    await room.handle_client_message(a, init_msg(0))
+    await drain(room)
+    await room.handle_client_message(a, line_msg('n', gen=1))
+    await drain(room)
+    room.shutdown()
+
+    text = (tmp_path / 'transcript.txt').read_text()
+    # Without the clear-handling, this would read "...(y/n)? nAFTER".
+    assert 'Pick (y/n)? n\nAFTER' in text
+
+
+async def test_transcript_one_blank_line_between_command_and_response(
+        factory, tmp_path):
+    """When the VM emits an empty paragraph between the command echo
+    and its response (the typical Inform pattern), the transcript
+    shows exactly one blank line between command and response -- not
+    zero, not two."""
+    state = {'gen': 0}
+
+    def respond(inobj):
+        state['gen'] += 1
+        if inobj['type'] == 'init':
+            return {
+                'type': 'update', 'gen': state['gen'],
+                'windows': [{'id': 1, 'type': 'buffer'}],
+                'content': [{'id': 1, 'text': [
+                    {'content': [{'style': 'normal', 'text': 'Intro.'}]},
+                    {'content': [{'style': 'normal', 'text': '> '}]},
+                ]}],
+                'input': [{'id': 1, 'type': 'line'}],
+            }
+        return {
+            'type': 'update', 'gen': state['gen'],
+            'content': [{'id': 1, 'text': [
+                {'append': True,
+                 'content': [{'style': 'input', 'text': inobj['value']}]},
+                {},  # the blank-line signal
+                {'content': [{'style': 'normal', 'text': 'Response.'}]},
+            ]}],
+            'input': [{'id': 1, 'type': 'line'}],
+        }
+    factory.responder = respond
+
+    room = _make_logged_room(factory, tmp_path, recording=False)
+    a, _ = connect(room, 'Alice')
+    await room.handle_client_message(a, init_msg(0))
+    await drain(room)
+    await room.handle_client_message(a, line_msg('look', gen=1))
+    await drain(room)
+    room.shutdown()
+
+    text = (tmp_path / 'transcript.txt').read_text()
+    # Canonical: prompt joined with command, then exactly one blank
+    # line, then response.
+    assert '> look\n\nResponse.' in text
+
+
+async def test_transcript_respects_append_paragraphs(factory, tmp_path):
+    """append=True paragraphs should run together with no separator,
+    even though the VM modeled them as multiple paragraphs in the
+    update."""
+    state = {'gen': 0}
+
+    def respond(inobj):
+        state['gen'] += 1
+        return {
+            'type': 'update', 'gen': state['gen'],
+            'windows': [{'id': 1, 'type': 'buffer'}],
+            'content': [{'id': 1, 'text': [
+                {'content': [{'style': 'normal', 'text': 'Part1'}]},
+                {'append': True,
+                 'content': [{'style': 'normal', 'text': 'Part2'}]},
+            ]}],
+            'input': [{'id': 1, 'type': 'line'}],
+        }
+    factory.responder = respond
+
+    room = _make_logged_room(factory, tmp_path, recording=False)
+    a, _ = connect(room, 'Alice')
+    await room.handle_client_message(a, init_msg(0))
+    await drain(room)
+    room.shutdown()
+
+    text = (tmp_path / 'transcript.txt').read_text()
+    assert 'Part1Part2' in text
+
+
+async def test_transcript_works_with_unusual_prompt_string(factory, tmp_path):
+    """Same join behavior must work for VMs that use a non-">" prompt."""
+    state = {'gen': 0}
+
+    def respond(inobj):
+        state['gen'] += 1
+        if inobj['type'] == 'init':
+            return {
+                'type': 'update', 'gen': state['gen'],
+                'windows': [{'id': 1, 'type': 'buffer'}],
+                'content': [{'id': 1, 'text': [
+                    {'content': [{'style': 'normal',
+                                  'text': 'What now? '}]},
+                ]}],
+                'input': [{'id': 1, 'type': 'line'}],
+            }
+        return {
+            'type': 'update', 'gen': state['gen'],
+            'content': [{'id': 1, 'text': [
+                {'content': [{'style': 'input', 'text': inobj['value']}]},
+                {'content': [{'style': 'normal', 'text': 'OK.'}]},
+            ]}],
+            'input': [{'id': 1, 'type': 'line'}],
+        }
+    factory.responder = respond
+
+    room = _make_logged_room(factory, tmp_path, recording=False)
+    a, _ = connect(room, 'Alice')
+    await room.handle_client_message(a, init_msg(0))
+    await drain(room)
+    await room.handle_client_message(a, line_msg('go', gen=1))
+    await drain(room)
+    room.shutdown()
+
+    text = (tmp_path / 'transcript.txt').read_text()
+    # Prompt joins regardless of what it looks like.
+    assert 'What now? go\n' in text
+
+
+async def test_unwritable_transcript_path_logs_warning_does_not_crash(
+        factory, tmp_path, caplog):
+    """A bad path must not take the room down -- log and continue."""
+    factory.responder = _transcript_responder()
+    bad = tmp_path / 'nonexistent-dir' / 'transcript.txt'
+    with caplog.at_level(logging.ERROR):
+        room = SharedRoom(
+            command='fake', log=logging.getLogger('flutterbug.test'),
+            cwd='/tmp', jsondebug=False, vm_factory=factory,
+            transcript_path=str(bad), recording_path=None,
+        )
+    assert room._transcript_file is None
+    assert any('transcript' in r.message.lower() for r in caplog.records)
+
+    a, _ = connect(room, 'Alice')
+    await room.handle_client_message(a, init_msg(0))
+    await drain(room)  # would crash if write path mishandled None handle
+    room.shutdown()

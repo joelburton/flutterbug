@@ -323,6 +323,20 @@ def main():
              '"lhr" = localhost.run (over ssh, no install needed, but '
              'may be blocked by some home routers).')
     parser.add_argument(
+        '--transcript', "-T", metavar='PATH', default=None,
+        help='write a complete game transcript (game text + player commands '
+             'inline) to PATH as the game runs. Captures from the very first '
+             'turn -- unlike in-game SCRIPT ON, which starts whenever you '
+             'turn it on. Works with any VM, including ones whose SCRIPT '
+             "support is broken. Overwrites PATH if it exists. Flushed "
+             'after every write.')
+    parser.add_argument(
+        '--recording', "-R", metavar='PATH', default=None,
+        help='write a plain list of player commands (one per line) to PATH. '
+             'Suitable as input for in-game REPLAY. Captures every command '
+             'from game start. Overwrites PATH if it exists. Flushed after '
+             'every write.')
+    parser.add_argument(
         '--secret', "-S", default=None,
         help='secret key for signing session cookies. If set, users stay '
              'signed in across server restarts and won\'t need to re-enter '
@@ -359,6 +373,17 @@ def main():
         log.warning(
             'Running with --no-password: anyone who reaches the URL can '
             'sign in. Only safe on a trusted local network.')
+
+    for attr in ('transcript', 'recording'):
+        path = getattr(args, attr)
+        if path is None:
+            continue
+        abspath = os.path.abspath(path)
+        parent = os.path.dirname(abspath) or '.'
+        if not os.path.isdir(parent):
+            parser.error(
+                f'--{attr} parent directory does not exist: {parent}')
+        setattr(args, attr, abspath)
 
     if args.story:
         args.story_path = os.path.abspath(args.story)
