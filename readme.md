@@ -57,7 +57,7 @@ pip install --user git+https://github.com/joelburton/flutterbug.git@v0.96
 
 (when this hits version 1.0, I'll add it to PyPi so this is easier to install)
 
-## Authentication: pick a password (or explicitly opt out)
+## Require password for users (or explicitly opt out)
 
 Every flutterbug invocation must pick one of:
 
@@ -96,11 +96,10 @@ providers; pick one with `--tunnel TYPE`:
   the tunnel will fail to come up. If that happens, switch to `cf`.
 - `--tunnel cf` — uses [Cloudflare](https://www.cloudflare.com)'s free
   quick-tunnel. Requires installing `cloudflared` on your computer (no
-  Cloudflare account needed). Tends to be more reliable across networks
-  and may scale better for larger friend groups.
+  Cloudflare account needed).
 
 ```sh
-flutterbug --password "super secret" --open --tunnel lhr --story=MyGameFile.z5
+flutterbug --password "secret" --open --tunnel lhr --story=game.z5
 ```
 
 After a moment, this will open your browser to the same link you can send to
@@ -138,7 +137,7 @@ browser is smaller than the host's will see the edges clipped; players
 with bigger windows will see empty space around the game.
 
 ```sh
-flutterbug --mode=fixed --password "super secret" --open --story=FancyGame.gblorb
+flutterbug --mode=fixed --story=game.z5 ...
 ```
 
 ### Keeping users signed in across restarts: `--secret`
@@ -150,80 +149,69 @@ a setting, or recover from a crash — everyone will need to sign in again.
 To avoid this, pass a fixed secret:
 
 ```sh
-flutterbug --secret "some long random string" --password "super secret" ...
+flutterbug --secret "random string" ...
 ```
 
 With a consistent `--secret`, a returning user whose browser still holds a
 valid session cookie is let straight into the game without seeing the sign-in
-page — even if a password is required for new visitors. Pick any long random
+page — even if a password is required for new visitors. Pick any random
 string and keep it the same across invocations. Don't reuse it as your game
 password.
 
-### Server-side transcripts and command recordings: `--transcript` / `--recording`
+### Server-side transcripts and command recordings
 
-If you want a complete log of the game session — captured from the very
-first turn, working with any VM, and not subject to the emglken bug
-described below — pass one or both of:
+If you want a complete log of the game session — captured from the start and working with any VM (including ones without native transcripting) — pass one or both of:
 
 ```sh
 flutterbug --transcript game.txt --recording game.cmd ...
 ```
 
-- `--transcript PATH` (also `-T`) writes a full transcript: the game's
-  output text with player commands inlined as `> command`, formatted
-  like a real game log. In multiplayer it prefixes commands with the
-  player name (`> Alice: look`) so you can tell who did what.
+- `--transcript PATH` (also `-T`) writes a full transcript. In multiplayer it prefixes commands with the
+  player name (`> Alice: look`).
 - `--recording PATH` (also `-R`) writes just the commands, one per
-  line — suitable as input for the in-game `REPLAY` command.
+  line — useful for the in-game `REPLAY` command.
 
-Both files are opened at startup (Flutterbug exits if the parent
-directory doesn't exist), overwritten if they already exist, and
-flushed after every write — `cat <path>` will show live state at any
-time. If the VM crashes and Flutterbug relaunches it within the same
-invocation, both files keep appending; the transcript marks the
-boundary with `--- Game session ended ---`.
+Both will overwrite existing files.
 
-### `SCRIPT` and `RECORDING` with emglken
+### In-game `SCRIPT` / `RECORDING` commands
 
-If you're using emglken (the default — i.e. you didn't pass `--command`)
-and your game uses the `SCRIPT ON` / `SCRIPT OFF` or `RECORDING ON` /
-`RECORDING OFF` commands to write a transcript or command list, the
-file you're writing to may appear empty until you `QUIT` the game.
+If you use emglken (the default) and rely on the in-game `SCRIPT ON`
+/ `SCRIPT OFF` or `RECORDING ON` / `RECORDING OFF` commands,  the file
+you're writing to will appear empty until the game exits. `SCRIPT
+OFF` does **not** flush it. This seems to be a limitation in emglken.
 
-This is an upstream bug in emglken's bundled `glkote-term` Node module:
-its file-write layer buffers writes in a 256-byte JS buffer that only
-flushes when full, on close, or when the process exits cleanly via the
-WASM atexit chain. Most VMs don't actually `glk_stream_close` the
-transcript stream on `SCRIPT OFF` (they only detach it), so the close
-+ flush only runs on `QUIT`.
+Two ways to fix:
 
-Workarounds:
-
-- Type `QUIT` in the game when you're done — that will flush both
-  files. Killing the server with Ctrl-C will *not* flush them; the
-  WASM atexit chain doesn't run on SIGTERM.
-- If you have a native RemGlk-built interpreter (`bocfel`, `rglulxe`,
-  etc.) installed, use it via `--command` — those flush on every write
-  via the OS, so `cat` shows the transcript continuously. Example:
-  `flutterbug --no-password --command='bocfel -rem MyGame.z5' --story=MyGame.z5`
+- **Use `--transcript` / `--recording` instead** (see above).
+- **Type `QUIT` in the game.** The ensures the files are written.
 
 ### How `--open` interacts with tunnels
 
 When `--open` is combined with `--tunnel`, Flutterbug waits for the
-public DNS record to be live before opening the browser. This works
-around a Safari/macOS quirk where the *first* failed DNS lookup gets
-cached as NXDOMAIN, and the page keeps showing "can't find the server"
-even after the tunnel is up. If the tunnel doesn't come up within 30
-seconds, Flutterbug exits with a non-zero status instead of opening
-anything. If you were using `--tunnel lhr` and it never came up, that's
-often a router-blocking issue — try `--tunnel cf`.
+public DNS record to be live before opening the browser. If you were using `--tunnel lhr` and it never came up, that's
+often a router-blocking issue: try the option for Cloudflare tunnels.
 
 
 ## Credits
 
 Flutterbug is written by Joel Burton <joel@joelburton.com>.
 
-It is based heavily on the remote-if-demo script by Andrew Plotkin, as well as his GlkOte library.
+It stands on the work of others:
 
-Thanks to @inventor200, @bg, @pieartsy, and @dannii for their support and
-help (all handles are at [intfiction.org](intfiction.org)).
+- [Andrew Plotkin](https://eblong.com/zarf/) — the
+  [remote-if-demo](https://github.com/erkyrath/remote-if-demo) script
+  that Flutterbug is descended from, the
+  [GlkOte](https://github.com/erkyrath/glkote) protocol the browser
+  client speaks, and the
+  [namedialog.js](https://github.com/erkyrath/glkote) save/restore
+  file picker.
+- [Dannii Willis](https://github.com/curiousdannii) —
+  [AsyncGlk](https://github.com/curiousdannii/asyncglk) (the in-browser
+  Glk/GlkOte implementation) and
+  [emglken](https://github.com/curiousdannii/emglken) (the bundled IF
+  interpreters: bocfel, glulxe, git, hugo, scare, tads).
+- [Iosevka Custom](https://typeof.net/Iosevka/) for the bundled
+  monospace font.
+
+Thanks to [intfiction.org](https://intfiction.org) members @inventor200, @bg, @pieartsy, and @dannii for their support
+and help.
