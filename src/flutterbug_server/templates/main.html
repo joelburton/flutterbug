@@ -1,5 +1,7 @@
 <html>
 <head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flutterbug</title>
 <link rel="icon" href="/favicon.ico">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -186,6 +188,47 @@ input[type=submit]:active {
 }
 .signed-in-row form {
 	margin: 0;
+}
+@media screen and (max-width: 600px) {
+	main {
+		padding: 18px 14px 32px;
+	}
+	.brand img {
+		width: 48px;
+		height: 48px;
+	}
+	.brand h1 {
+		font-size: 1.6em;
+	}
+	section {
+		padding: 14px 14px;
+	}
+	/* Stack label above input so the input can take the full row width
+	   instead of being pushed off-screen by its 240px min-width. */
+	label {
+		display: block;
+		min-width: 0;
+		margin-bottom: 4px;
+	}
+	input[type=text],
+	input[type=password],
+	select {
+		min-width: 0;
+		width: 100%;
+		box-sizing: border-box;
+		/* iOS Safari zooms in on focus when input font-size is below 16px;
+		   keep it at 16px on small screens so tapping a field doesn't
+		   trigger a viewport zoom. */
+		font-size: 16px;
+	}
+	.game-card {
+		flex-direction: column;
+		gap: 12px;
+	}
+	.game-card img {
+		max-width: 100%;
+		align-self: center;
+	}
 }
 </style>
 </head>

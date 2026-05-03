@@ -139,6 +139,9 @@ def test_returns_full_dict_on_full_happy_path(monkeypatch):
         'author': 'Graham Nelson',
         'cover_art_url': 'https://example.invalid/c.png',
         'ifid': 'IFID-123',
+        'description': None,
+        'ifdb_url': None,
+        'first_published': None,
     }
 
 
