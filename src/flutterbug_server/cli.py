@@ -185,8 +185,7 @@ def _start_cloudflared_tunnel(
         ['cloudflared', 'tunnel', '--url', f'http://localhost:{port}'],
         _CLOUDFLARED_URL_RE,
         log,
-        "cloudflared not found on PATH. Install it (e.g. "
-        "'brew install cloudflared') and try again.",
+        "cloudflared not found on PATH. Install it and try again.",
         banner_done=banner_done)
 
 
@@ -281,23 +280,27 @@ def main():
         '--version', action='version',
         version=f'%(prog)s {FLUTTERBUG_VERSION}')
     parser.add_argument(
-        '--port', type=int, default=4000,
+        '--port', "-P", type=int, default=4000,
         help='port number to listen on (default: 4000)')
     parser.add_argument(
-        '--verbose', action='store_true',
-        help='show tunnel provider output, HTTP access logs, and other diagnostic detail')
+        '--verbose', "-v", action='store_true',
+        help="raise Flutterbug's own log to DEBUG and enable uvicorn's "
+             "HTTP access log (tunnel provider output, request log, "
+             "diagnostics from Flutterbug itself)")
     parser.add_argument(
-        '--debug', action='store_true',
-        help='enable debug logging')
+        '--debug', "-d", action='store_true',
+        help="raise uvicorn's framework log to DEBUG (ASGI lifecycle, "
+             "websocket handshakes, server internals -- independent of "
+             "--verbose)")
     parser.add_argument(
         '--command',
         help='shell command to run a RemGlk game')
     parser.add_argument(
-        '--story', metavar='PATH',
+        '--story', "-s", metavar='PATH',
         help='story file path. Without --command, expanded as: emglken PATH --rem. '
              'With --command, used for IFDB metadata + Blorb resource extraction.')
     parser.add_argument(
-        '--mode', choices=('flex', 'fixed'), default='flex',
+        '--mode', "-m", choices=('flex', 'fixed'), default='flex',
         help='flex (default): players can have different browser width/height '
              'than others, and can change font sizes. '
              'fixed: all players use same browser width/height; use for games '
@@ -307,30 +310,31 @@ def main():
         help='72 (default) in flex mode, sets the status window width in columns.')
     parser.add_argument(
         '--jsondebug', action='store_true',
-        help='log JSON messages in/out for websocket and game transport debugging')
+        help='log every JSON message body on the websocket and the VM '
+             'stdin/stdout pipe (wire-protocol debugging)')
     parser.add_argument(
-        '--open', action='store_true',
+        '--open', "-o", action='store_true',
         help='open the app URL in the default web browser once server is ready')
     tunnel_group = parser.add_mutually_exclusive_group()
     tunnel_group.add_argument(
-        '--tunnel', action='store_true',
+        '--tunnel', "-t", action='store_true',
         help='expose the server publicly via a localhost.run ssh tunnel.')
 
     tunnel_group.add_argument(
-        '--cloudflare', action='store_true',
+        '--cloudflare', "-c", action='store_true',
         help='expose via cloudflared tunnel instead of localhost.run.')
     parser.add_argument(
-        '--secret', default=None,
+        '--secret', "-S", default=None,
         help='secret key for signing session cookies. If set, users stay '
              'signed in across server restarts and won\'t need to re-enter '
              'the password. If omitted, a random key is used and all '
              'sessions are invalidated whenever the server restarts.')
     auth_group = parser.add_mutually_exclusive_group(required=True)
     auth_group.add_argument(
-        '--password', default=None,
+        '--password', "-p", default=None,
         help='players must enter this password on the sign-in page')
     auth_group.add_argument(
-        '--no-password', action='store_true',
+        '--no-password', "-n",action='store_true',
         help='allow anyone who reaches the URL to sign in. Only safe on a '
              'trusted local network.')
     args = parser.parse_args()
