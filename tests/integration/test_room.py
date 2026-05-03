@@ -573,13 +573,15 @@ async def test_fileref_prompt_locks_others_and_unblocks_holder(room, factory):
     await room.handle_client_message(a, line_msg('save', gen=1))
     await drain(room)
 
-    # A sees specialinput; B sees the same update with disable=True and no
-    # specialinput; both see a 'status' broadcast that A is busy.
+    # A sees specialinput; B sees the same update with no specialinput
+    # (and crucially NO `disable: true`, which AsyncGlk treats as
+    # "game exited" and would destroy B's windows). Both see a 'status'
+    # broadcast that A is busy.
     a_updates = [m for m in sock_a.messages if m.get('type') == 'update']
     b_updates = [m for m in sock_b.messages if m.get('type') == 'update']
     assert any('specialinput' in m for m in a_updates)
     assert all('specialinput' not in m for m in b_updates)
-    assert any(m.get('disable') for m in b_updates)
+    assert all(not m.get('disable') for m in b_updates)
 
     statuses = [m for m in sock_a.messages if m.get('multiplayer') == 'status']
     assert any('A' in m['message'] and 'save/restore' in m['message'] for m in statuses)

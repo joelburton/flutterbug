@@ -544,13 +544,15 @@ class SharedRoom(PersistSession):
         if outobj is None:
             return
 
-        if self.specialinput_clientid is not None:
-            if clientid == self.specialinput_clientid:
-                special = (self.snapshot.latest_output or {}).get('specialinput')
-                if special:
-                    outobj['specialinput'] = copy.deepcopy(special)
-            else:
-                outobj['disable'] = True
+        if (self.specialinput_clientid is not None
+                and clientid == self.specialinput_clientid):
+            special = (self.snapshot.latest_output or {}).get('specialinput')
+            if special:
+                outobj['specialinput'] = copy.deepcopy(special)
+        # Locked-out late joiners deliberately do NOT get `disable: true`:
+        # AsyncGlk treats it as "the game has exited" and destroys all
+        # windows, breaking the next content update. Server-side fileref
+        # locking + the shared status banner cover the UX.
 
         await self.send_to_client(clientid, outobj)
 
@@ -890,15 +892,20 @@ class SharedRoom(PersistSession):
 
                 if special and special.get('type') == SPECIAL_FILEREF_PROMPT:
                     # Send the prompt only to the initiating player; everyone
-                    # else gets the same state, minus the popup, plus a
-                    # disable flag so they can't type.
+                    # else gets the same state minus the popup. Don't set
+                    # GlkOte's `disable` flag on the locked-out clients --
+                    # in AsyncGlk, `disable: true` means "the game has
+                    # exited" and triggers windows.destroy(), so the next
+                    # content update would error with "window N does not
+                    # exist". The fileref lock is enforced server-side in
+                    # _allow_through_fileref_lock; the shared status
+                    # banner tells locked-out players what's happening.
                     for target_clientid in list(self.clients.keys()):
                         if target_clientid == clientid:
                             await self.send_to_client(target_clientid, outobj)
                         else:
                             otherobj = dict(outobj)
                             otherobj.pop('specialinput', None)
-                            otherobj['disable'] = True
                             await self.send_to_client(target_clientid, otherobj)
                 else:
                     await self.broadcast(outobj)
