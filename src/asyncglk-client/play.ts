@@ -1,8 +1,8 @@
 /*
-  AsyncGlk-based client for the /play2 route — the TypeScript replacement
+  AsyncGlk-based client for the /play route — the TypeScript replacement
   for static/playws-asyncglk.js.
 
-  Bundled by esbuild into static/play2.bundle.js. The Plotkin-GlkOte path
+  Bundled by esbuild into static/play.bundle.js. The Plotkin-GlkOte path
   (/play, static/playws.js) is untouched.
 
   Originally derived from Plotkin's example-web-remglk-glkote demo and
@@ -14,11 +14,11 @@ import WebGlkOte from 'asyncglk/dist/glkote/web/web.js'
 import {Blorb} from 'asyncglk/dist/blorb/blorb.js'
 import * as protocol from 'asyncglk/dist/common/protocol.js'
 
-// jQuery is loaded as a separate <script> tag in play2.html (vendored at
+// jQuery is loaded as a separate <script> tag in play.html (vendored at
 // /static/jquery-3.7.1.min.js) and exposed as a global. We don't bundle it.
 declare const $: JQueryStatic
 
-// namedialog.js is loaded as a separate <script> tag in play2.html and
+// namedialog.js is loaded as a separate <script> tag in play.html and
 // exposes a Dialog global (Plotkin's simplified file-pick dialog).
 // FlutterbugDialog below wraps it for AsyncGlk's async interface.
 //
@@ -38,7 +38,7 @@ declare const Dialog: {
     ): void
 }
 
-// Filled in by play2.html's inline <script> before the bundle loads.
+// Filled in by play.html's inline <script> before the bundle loads.
 declare const multiplayer_playername: string
 
 // ---------------------------------------------------------------------------

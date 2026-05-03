@@ -61,8 +61,8 @@ review-*.md
 # Node / npm (AsyncGlk PoC)
 node_modules/
 package-lock.json
-src/flutterbug_server/static/play2.bundle.js
-src/flutterbug_server/static/play2.bundle.js.map
+src/flutterbug_server/static/play.bundle.js
+src/flutterbug_server/static/play.bundle.js.map
 src/flutterbug_server/static/asyncglk-css/
 
 # Game save files (runtime artifacts in launch dir)

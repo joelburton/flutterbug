@@ -223,8 +223,8 @@ def create_app(settings) -> FastAPI:
         html = render_template('main.html', build_main_context(sessionid))
         return HTMLResponse(html)
 
-    @app.get('/play2')
-    async def play2_get(
+    @app.get('/play')
+    async def play_get(
         request: Request,
         name: str = Query(''),
         theme: str = Query('flutterbug'),
@@ -238,7 +238,7 @@ def create_app(settings) -> FastAPI:
         if themename not in AVAILABLE_THEMES:
             themename = 'flutterbug'
 
-        html = render_template('play2.html', {
+        html = render_template('play.html', {
             'playername': playername,
             'themename': themename,
             'theme_css': AVAILABLE_THEMES[themename],

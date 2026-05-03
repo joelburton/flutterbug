@@ -20,7 +20,7 @@
   --fb-font-serif: "Source Serif 4", "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, serif;
 
   /* Multiplier the in-app A−/A+ stepper writes onto documentElement.
-     play2.ts reads it back to compute --glkote-buffer-size /
+     play.ts reads it back to compute --glkote-buffer-size /
      --glkote-grid-size / --glkote-grid-line-height. */
   --fb-game-font-scale: 1;
 
@@ -29,7 +29,7 @@
   --glkote-buffer-line-height: 1.45;
   --glkote-buffer-base-size: 18px;
 
-  /* AsyncGlk grid metrics. The base sizes are read by play2.ts and
+  /* AsyncGlk grid metrics. The base sizes are read by play.ts and
      multiplied by --fb-game-font-scale on each font-stepper change. */
   --glkote-grid-base-size: 14px;
   --glkote-grid-base-line-height: 18px;
