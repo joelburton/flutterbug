@@ -62,6 +62,15 @@ const FONT_SCALE_MIN = 0.7
 const FONT_SCALE_MAX = 2.0
 const FONT_SCALE_STEP = 0.125
 
+/* Per-client status-bar enlargement. The grid font is intentionally narrow
+   so a 72-col status bar fits on phones / narrow tablets without
+   horizontal scroll; on a wide browser that's tiny, so each client can
+   opt into a bigger grid font locally. The VM's metrics stay locked
+   (via locked_metrics in fixed/flex modes) -- this only changes how the
+   grid renders in the local DOM. */
+const LARGE_STATUS_KEY = 'flutterbug.largeStatus'
+const LARGE_STATUS_GRID_MULT = 1.5
+
 // Fallbacks if the active theme doesn't set a per-theme base. Themes
 // override via --glkote-buffer-base-size / --glkote-grid-base-size /
 // --glkote-grid-base-line-height. Defaults match asyncglk-css/core.css.
@@ -335,9 +344,10 @@ function apply_font_scale(scale: number): number {
     const buffer_base = read_px_var('--glkote-buffer-base-size', ASYNCGLK_BUFFER_BASE_PX)
     const grid_base = read_px_var('--glkote-grid-base-size', ASYNCGLK_GRID_BASE_PX)
     const grid_lh_base = read_px_var('--glkote-grid-base-line-height', ASYNCGLK_GRID_LINE_HEIGHT_BASE_PX)
+    const grid_bonus = document.body.classList.contains('large-status') ? LARGE_STATUS_GRID_MULT : 1
     root.style.setProperty('--glkote-buffer-size', (buffer_base * scale) + 'px')
-    root.style.setProperty('--glkote-grid-size', (grid_base * scale) + 'px')
-    root.style.setProperty('--glkote-grid-line-height', (grid_lh_base * scale) + 'px')
+    root.style.setProperty('--glkote-grid-size', (grid_base * scale * grid_bonus) + 'px')
+    root.style.setProperty('--glkote-grid-line-height', (grid_lh_base * scale * grid_bonus) + 'px')
     const label = document.getElementById('font-size-reset')
     if (label) label.textContent = Math.round(scale * 100) + '%'
     try { window.localStorage.setItem(FONT_SCALE_KEY, String(scale)) }
@@ -474,6 +484,24 @@ $(document).ready(() => {
         try {
             window.localStorage.setItem(SLASH_CHAT_KEY, slash_chat_enabled ? '1' : '0')
         } catch (ex) { /* ignore quota / private-mode failures */ }
+    })
+
+    /* Restore the saved large-status preference before apply_font_scale
+       runs so the first grid metrics it computes already include the
+       bonus multiplier. */
+    let large_status = false
+    try {
+        large_status = window.localStorage.getItem(LARGE_STATUS_KEY) === '1'
+    } catch (ex) { /* localStorage may be unavailable */ }
+    document.body.classList.toggle('large-status', large_status)
+    $('#large-status-toggle').prop('checked', large_status)
+    $('#large-status-toggle').on('change', function () {
+        const checked = (this as HTMLInputElement).checked
+        document.body.classList.toggle('large-status', checked)
+        try {
+            window.localStorage.setItem(LARGE_STATUS_KEY, checked ? '1' : '0')
+        } catch (ex) { /* ignore quota / private-mode failures */ }
+        apply_font_scale(current_font_scale())
     })
 
     /* Restore the saved game-text scale, if any, before the first arrange

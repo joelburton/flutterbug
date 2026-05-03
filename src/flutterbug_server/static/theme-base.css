@@ -367,14 +367,19 @@ body.mode-fixed #gameport {
   gap: var(--fb-chat-row-gap);
 }
 
-#slash-chat-option {
+#slash-chat-option,
+#large-status-option {
   display: flex;
   align-items: center;
   gap: 0.4em;
-  margin: 0 var(--fb-feed-margin-x) var(--fb-chat-row-margin-bottom) var(--fb-feed-margin-x);
+  margin: 0 var(--fb-feed-margin-x) 0 var(--fb-feed-margin-x);
   font-size: 0.75em;
   opacity: 0.7;
   cursor: pointer;
+}
+
+#large-status-option {
+  margin-bottom: 1em;
 }
 
 #slash-chat-option kbd {
