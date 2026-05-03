@@ -85,25 +85,42 @@ opens it in your default browser.
 
 ## Playing with friends (public tunnel)
 
-In order for your friends to connect to your game, you'll need to open a
-"tunnel" to the server on your computer. Flutterbug supports two tunnel
-providers; pick one with `--tunnel TYPE`:
+In order for your friends to connect to your game, they'll need to be able to
+reach your computer. If you have a VPN or static IP, you may not need to set
+up a tunnel.
 
-- `--tunnel lhr` — uses [Localhost.run](https://localhost.run) over ssh.
-  Free, no install needed beyond the ssh that ships with most systems.
-  **Caveat:** some home routers (especially ones with "advanced security"
-  or family-filter features) block localhost.run entirely, in which case
-  the tunnel will fail to come up. If that happens, switch to `cf`.
-- `--tunnel cf` — uses [Cloudflare](https://www.cloudflare.com)'s free
-  quick-tunnel. Requires installing `cloudflared` on your computer (no
-  Cloudflare account needed).
+For most people, though, you'll need to open a public tunnel to your computer.
+Flutterbug has support for two built-in (or you can use any other solution to
+set up a tunnel yourself):
+
+### Localhost.run tunnel
+
+[Localhost.run](https://localhost.run) provides free tunnels and requires no
+setup on your computer or anything installed. To use this, add `--tunnel lhr`
+to your invocation of Flutterbug:
 
 ```sh
 flutterbug --password "secret" --open --tunnel lhr --story=game.z5
 ```
 
-After a moment, this will open your browser to the same link you can send to
-friends — together with the password.
+> **Caveat:** some home routers (especially ones with "advanced security"
+> or family-filter features) block localhost.run entirely, in which case
+> the tunnel will fail to come up. If that happens, switch to a Cloudflare tunnel.
+
+### Cloudflare tunnel
+
+[Cloudflare](https://www.cloudflare.com) also provides free tunnels, and requires
+no Cloudflare account. However, you do need to install a program on your computer:
+[Cloudflare installation directions](https://www.cloudflare.com). Once you have
+that installed, you can use this by adding `--tunnel cf`:
+
+```sh
+flutterbug --password "secret" --open --tunnel cf --story=game.z5
+```
+
+### After starting a tunnel
+
+After a moment, this will open your browser to the same link you can send to friends — together with the password.
 
 Quitting Flutterbug will disconnect that tunnel.
 
@@ -184,12 +201,6 @@ Two ways to fix:
 
 - **Use `--transcript` / `--recording` instead** (see above).
 - **Type `QUIT` in the game.** The ensures the files are written.
-
-### How `--open` interacts with tunnels
-
-When `--open` is combined with `--tunnel`, Flutterbug waits for the
-public DNS record to be live before opening the browser. If you were using `--tunnel lhr` and it never came up, that's
-often a router-blocking issue: try the option for Cloudflare tunnels.
 
 
 ## Credits
