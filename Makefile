@@ -1,4 +1,4 @@
-PREV_VERSION = $(shell grep '__version__' src/flutterbug_server/__init__.py | sed 's/.*"\(.*\)"/\1/')
+PREV_VERSION = $(shell grep '^__version__' src/flutterbug_server/__init__.py | sed 's/.*"\(.*\)"/\1/')
 
 .PHONY: clean dev release
 
