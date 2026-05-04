@@ -23,7 +23,7 @@ launchers for solo and friends-online play.
 
 The rest of this file is for people using other operating systems, or who
 are running into trouble the Windows quick-start didn't cover, or just
-want to learn more about how it works.
+want to learn more about other features.
 
 ## Requirements
 
@@ -83,7 +83,7 @@ flutterbug --no-password --open --story=MyGameFile.z5
 `--open` waits for the server to come up on http://localhost:4000/ and
 opens it in your default browser.
 
-## Playing with friends (public tunnel)
+## Playing with friends
 
 In order for your friends to connect to your game, they'll need to be able to
 reach your computer. If you have a VPN or static IP, you may not need to set
