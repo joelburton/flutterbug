@@ -48,11 +48,11 @@ the interpreter from launching:
 npm install -g emglken@0.6.0
 ```
 
-Install Flutterbug. The `@v0.97` pins to a known release; bump it when a
+Install Flutterbug. The `@v0.98` pins to a known release; bump it when a
 newer tag is available on GitHub:
 
 ```sh
-pip install --user git+https://github.com/joelburton/flutterbug.git@v0.97
+pip install --user git+https://github.com/joelburton/flutterbug.git@v0.98
 ```
 
 (when this hits version 1.0, I'll add it to PyPi so this is easier to install)
