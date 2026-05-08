@@ -1,5 +1,12 @@
 PREV_VERSION = $(shell grep '^__version__' src/flutterbug_server/__init__.py | sed 's/.*"\(.*\)"/\1/')
 
+# BSD sed (macOS) requires an explicit empty backup suffix; GNU sed (Linux) does not accept it.
+ifeq ($(shell uname),Darwin)
+SED_INPLACE = sed -i ''
+else
+SED_INPLACE = sed -i
+endif
+
 .PHONY: clean dev prerelease release
 
 clean:
@@ -29,10 +36,10 @@ ifndef VERSION
 	$(error VERSION is required: make release VERSION=0.96)
 endif
 	npm run build
-	sed -i '' 's/__version__ = "$(PREV_VERSION)"/__version__ = "$(VERSION)"/' \
+	$(SED_INPLACE) 's/__version__ = "$(PREV_VERSION)"/__version__ = "$(VERSION)"/' \
 		src/flutterbug_server/__init__.py
-	sed -i '' 's/@v$(PREV_VERSION)/@v$(VERSION)/g' readme.md
-	sed -i '' 's/@v$(PREV_VERSION)/@v$(VERSION)/g' windows/flutterbug-install.bat
+	$(SED_INPLACE) 's/@v$(PREV_VERSION)/@v$(VERSION)/g' readme.md
+	$(SED_INPLACE) 's/@v$(PREV_VERSION)/@v$(VERSION)/g' windows/flutterbug-install.bat
 	git add src/flutterbug_server/__init__.py readme.md windows/flutterbug-install.bat \
 		src/flutterbug_server/static/play.bundle.js \
 		src/flutterbug_server/static/asyncglk-css
