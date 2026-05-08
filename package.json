@@ -5,7 +5,8 @@
   "description": "Build tooling for flutterbug's browser-side JS (AsyncGlk PoC).",
   "type": "module",
   "scripts": {
-    "build": "npm run build:js && npm run build:css",
+    "build": "npm run build:asyncglk && npm run build:js && npm run build:css",
+    "build:asyncglk": "cd node_modules/asyncglk && npm install --silent",
     "build:js": "esbuild src/asyncglk-client/play.ts --bundle --format=iife --outfile=src/flutterbug_server/static/play.bundle.js",
     "build:css": "mkdir -p src/flutterbug_server/static/asyncglk-css && cp node_modules/asyncglk/src/glkote/web/*.css src/flutterbug_server/static/asyncglk-css/",
     "build:watch": "npm run build:js -- --watch",
@@ -13,7 +14,7 @@
   },
   "devDependencies": {
     "@types/jquery": "^4.0.0",
-    "asyncglk": "file:../../vms-project/asyncglk",
+    "asyncglk": "github:curiousdannii/asyncglk",
     "esbuild": "^0.25.0",
     "typescript": "~5.9.0"
   }

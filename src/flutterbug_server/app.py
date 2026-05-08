@@ -66,6 +66,37 @@ TUNNEL_ORIGIN_SUFFIXES = ('.trycloudflare.com', '.lhr.life')
 PLAYERNAME_MAX_LENGTH = 40
 
 
+# Browser assets that play.html references and that are produced by
+# `npm run build`. If any are missing, the /play page loads but the
+# browser hangs at "loading" because it never gets the JS that drives
+# the websocket. We surface this once at startup so a packaging or
+# build-step regression doesn't masquerade as a server bug.
+REQUIRED_BROWSER_ASSETS = (
+    'play.bundle.js',
+    os.path.join('asyncglk-css', 'glkote.css'),
+)
+
+
+def _check_browser_assets(static_dir: str, log: logging.Logger) -> None:
+    missing = [
+        rel for rel in REQUIRED_BROWSER_ASSETS
+        if not os.path.isfile(os.path.join(static_dir, rel))
+    ]
+    if not missing:
+        return
+    log.error(
+        'Missing browser assets -- the /play route will hang at "loading".\n'
+        '  Missing: %s\n'
+        '  Looked under: %s\n'
+        'These are produced by `npm run build`. If you installed via '
+        '`pip install git+...`, the source tag may have been published '
+        'without the bundle (run `make prerelease` then `make release`). '
+        'If you cloned and used `pip install -e .`, run `make prerelease` '
+        'in your checkout.',
+        ', '.join(missing), static_dir,
+    )
+
+
 def _is_allowed_origin(origin: Optional[str], host: Optional[str]) -> bool:
     """Validate a websocket Origin header against the request's Host.
 
@@ -121,6 +152,7 @@ def create_app(settings) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        _check_browser_assets(static_dir, log)
         app.state.settings = settings
         app.state.log = log
         app.state.launch_dir = launch_dir

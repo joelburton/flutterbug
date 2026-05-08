@@ -1,6 +1,9 @@
 """Unit tests for helpers in ``app.py`` that don't need the full ASGI app."""
 
-from flutterbug_server.app import _is_allowed_origin
+import logging
+import os
+
+from flutterbug_server.app import _check_browser_assets, _is_allowed_origin
 
 
 def test_origin_missing_is_allowed():
@@ -53,3 +56,25 @@ def test_origin_with_no_hostname_is_rejected():
     """``Origin: null`` (sandbox iframes) and bare schemes have no hostname."""
     assert not _is_allowed_origin('null', 'localhost:4000')
     assert not _is_allowed_origin('http://', 'localhost:4000')
+
+
+def test_browser_assets_check_silent_when_present(tmp_path, caplog):
+    os.makedirs(tmp_path / 'asyncglk-css')
+    (tmp_path / 'play.bundle.js').write_text('// bundle')
+    (tmp_path / 'asyncglk-css' / 'glkote.css').write_text('/* css */')
+    with caplog.at_level(logging.ERROR):
+        _check_browser_assets(str(tmp_path), logging.getLogger('test'))
+    assert caplog.records == []
+
+
+def test_browser_assets_check_logs_when_missing(tmp_path, caplog):
+    """Empty static dir; both required assets absent. The log must name
+    them and tell the user how to fix it -- this is the message we want
+    a confused new user to see at boot before chasing phantom server bugs."""
+    with caplog.at_level(logging.ERROR):
+        _check_browser_assets(str(tmp_path), logging.getLogger('test'))
+    assert len(caplog.records) == 1
+    msg = caplog.records[0].getMessage()
+    assert 'play.bundle.js' in msg
+    assert 'glkote.css' in msg
+    assert 'npm run build' in msg

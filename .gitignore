@@ -58,12 +58,13 @@ CLAUDE.md
 # Working code-review notes
 review-*.md
 
-# Node / npm (AsyncGlk PoC)
+# Node / npm (AsyncGlk PoC). The build outputs (play.bundle.js,
+# asyncglk-css/) are intentionally NOT ignored: they are checked in and
+# refreshed by `npm run build` (also invoked by `make release`) so end
+# users can `pip install` without needing Node, npm, or asyncglk.
 node_modules/
 package-lock.json
-src/flutterbug_server/static/play.bundle.js
 src/flutterbug_server/static/play.bundle.js.map
-src/flutterbug_server/static/asyncglk-css/
 
 # Game save files (runtime artifacts in launch dir)
 *.glksave

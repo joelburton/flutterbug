@@ -75,7 +75,7 @@ def fake_story_metadata(monkeypatch):
         'cover_art_url': 'https://example.invalid/curses.png',
     }
     monkeypatch.setattr(
-        'flutterbug_server.app.lookup_story_metadata',
+        'flutterbug_server.app.build_story_info',
         lambda path, log: meta,
     )
     return meta

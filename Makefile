@@ -1,6 +1,6 @@
 PREV_VERSION = $(shell grep '^__version__' src/flutterbug_server/__init__.py | sed 's/.*"\(.*\)"/\1/')
 
-.PHONY: clean dev release
+.PHONY: clean dev prerelease release
 
 clean:
 	rm -rf flutterbug-windows.zip dist/ build/ src/*.egg-info
@@ -10,15 +10,32 @@ clean:
 dev:
 	pip install -e .
 
+# Run before `make release`. Wipes node_modules so npm fetches the latest
+# asyncglk from GitHub (the package.json dep is unpinned), then builds the
+# browser bundle. Test the result manually -- `make release` uses whatever
+# is currently in node_modules, so the version you tested is the version
+# that ships.
+prerelease:
+	rm -rf node_modules
+	npm install
+	npm run build
+	@echo
+	@echo "Build complete. Test with the freshly-built bundle (e.g."
+	@echo "    flutterbug --no-password --open --story=PATH"
+	@echo "). When you're satisfied, run: make release VERSION=X.Y"
+
 release:
 ifndef VERSION
 	$(error VERSION is required: make release VERSION=0.96)
 endif
+	npm run build
 	sed -i '' 's/__version__ = "$(PREV_VERSION)"/__version__ = "$(VERSION)"/' \
 		src/flutterbug_server/__init__.py
 	sed -i '' 's/@v$(PREV_VERSION)/@v$(VERSION)/g' readme.md
 	sed -i '' 's/@v$(PREV_VERSION)/@v$(VERSION)/g' windows/flutterbug-install.bat
-	git add src/flutterbug_server/__init__.py readme.md windows/flutterbug-install.bat
+	git add src/flutterbug_server/__init__.py readme.md windows/flutterbug-install.bat \
+		src/flutterbug_server/static/play.bundle.js \
+		src/flutterbug_server/static/asyncglk-css
 	git commit -m "Release $(VERSION)"
 	git tag v$(VERSION)
 	git push origin main
