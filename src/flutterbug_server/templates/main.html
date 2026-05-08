@@ -245,7 +245,7 @@ input[type=submit]:active {
  </div>
 </div>
 
-{% if game_info and (game_info.title or game_info.author or game_info.cover_art_url) %}
+{% if game_info %}
 <section>
  <div class="game-card">
  {% if game_info.cover_art_url %}
@@ -254,6 +254,8 @@ input[type=submit]:active {
  <div class="game-card-body">
   {% if game_info.title %}
   <h2>{{ game_info.title }}</h2>
+  {% elif game_info.filename %}
+  <h2>{{ game_info.filename }}</h2>
   {% endif %}
   {% if game_info.author or game_info.first_published %}
   <p class="hint game-card-byline">

@@ -96,6 +96,19 @@ def _is_allowed_origin(origin: Optional[str], host: Optional[str]) -> bool:
     return False
 
 
+def build_story_info(story_path: Optional[str], log) -> Optional[dict]:
+    """Always return a card-shaped dict when a story is loaded so the
+    index page has something to show. IFDB metadata is layered on top
+    when the lookup succeeds; otherwise the card just shows the filename."""
+    if not story_path:
+        return None
+    info = {'filename': os.path.basename(story_path)}
+    metadata = lookup_story_metadata(story_path, log)
+    if metadata:
+        info.update(metadata)
+    return info
+
+
 def create_app(settings) -> FastAPI:
     log = logging.getLogger('uvicorn.error')
     static_dir = os.path.join(MODULE_DIR, 'static')
@@ -111,7 +124,7 @@ def create_app(settings) -> FastAPI:
         app.state.settings = settings
         app.state.log = log
         app.state.launch_dir = launch_dir
-        app.state.story_metadata = lookup_story_metadata(settings.story_path, log)
+        app.state.story_metadata = build_story_info(settings.story_path, log)
         app.state.room = SharedRoom(
             settings.command,
             log,
